@@ -21,6 +21,7 @@
 
 import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, PathsD, Point64, PointD, Rect64, RectD } from "./core";
 import { Clipper64, ClipperD, PointInPolygonResult, PolyPath64, PolyPathD, PolyTree64, PolyTreeD } from "./engine";
+import { EndType, JoinType } from "./offset";
 
 export class Clipper {
 
