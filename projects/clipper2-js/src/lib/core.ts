@@ -9,7 +9,7 @@
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Core.cs
-// Support for USINGZ removed
+// Removed support for USINGZ
 //
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
@@ -407,12 +407,6 @@ export class Point64 {
 //  public getHashCode(): number {
 //    return this.X ^ this.Y;  // Simple XOR-based hash combination. Adjust if needed.
 //  }
-}
-
-export enum PointInPolygonResult {
-  IsInside,
-  IsOutside,
-  IsOn
 }
 
 export class InternalClipper {

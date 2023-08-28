@@ -13,7 +13,7 @@ import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, 
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Engine.cs
-// Support for USINGZ removed
+// Removed support for USINGZ
 //
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
@@ -31,13 +31,13 @@ import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, 
 // The C# out modifier does not have a direct translation in TypeScript. I modified the function popScanline to return a value or undefined.
 // Some bitwise operations were used in the original code. You'll need to review them in the context of the entire class and the related classes.
 
-enum PointInPolygonResult {
+export enum PointInPolygonResult {
   IsOn = 0,
   IsInside = 1,
   IsOutside = 2
 }
 
-enum VertexFlags {
+export enum VertexFlags {
   None = 0,
   OpenStart = 1,
   OpenEnd = 2,
@@ -118,20 +118,20 @@ class OutPt {
   }
 }
 
-enum JoinWith {
+export enum JoinWith {
   None,
   Left,
   Right
 }
 
-enum HorzPosition {
+export enum HorzPosition {
   Bottom,
   Middle,
   Top
 }
 
 // TODO: can this be an interface?
-interface OutRec {
+export interface OutRec {
   idx: number;
   owner: OutRec | undefined;
   frontEdge: Active | undefined;
@@ -184,7 +184,7 @@ class HorzJoin {
 // displays, which is the orientation used in Clipper's development.
 ///////////////////////////////////////////////////////////////////
 
-interface Active {
+export interface Active {
   bot: Point64;
   top: Point64;
   curX: number;// current (updated at every new scanline)
@@ -213,7 +213,7 @@ interface Active {
   joinWith: JoinWith;
 }
 
-class ClipperEngine {
+export class ClipperEngine {
   static addLocMin(vert: Vertex, polytype: PathType, isOpen: boolean, minimaList: LocalMinima[]): void {
     // make sure the vertex is added only once ...
     if ((vert.flags & VertexFlags.LocalMin) !== VertexFlags.None) return;
@@ -311,7 +311,7 @@ class ClipperEngine {
   }
 }
 
-class ReuseableDataContainer64 {
+export class ReuseableDataContainer64 {
   readonly _minimaList: LocalMinima[];
   private readonly _vertexList: Vertex[];
 
@@ -330,7 +330,7 @@ class ReuseableDataContainer64 {
   }
 }
 
-class ClipperBase {
+export class ClipperBase {
   private _cliptype: ClipType = ClipType.None
   private _fillrule: FillRule = FillRule.EvenOdd
   private _actives?: Active;
@@ -2567,7 +2567,7 @@ class ClipperBase {
 }
 
 
-class Clipper64 extends ClipperBase {
+export class Clipper64 extends ClipperBase {
 
   override addPath(path: Path64, polytype: PathType, isOpen: boolean = false): void {
     super.addPath(path, polytype, isOpen);
@@ -2631,7 +2631,7 @@ class Clipper64 extends ClipperBase {
   }
 }
 
-class ClipperD extends ClipperBase {
+export class ClipperD extends ClipperBase {
 
   private readonly precisionRangeError: string = "Error: Precision is out of range.";
   private readonly _scale: number;
@@ -2769,7 +2769,7 @@ private class NodeEnumerator implements Iterator<PolyPathBase> {
   }
 }
 
-abstract class PolyPathBase implements Iterable<PolyPathBase> {
+export abstract class PolyPathBase implements Iterable<PolyPathBase> {
   protected _parent?: PolyPathBase;
   protected _childs: PolyPathBase[] = [];
 
@@ -2815,7 +2815,7 @@ abstract class PolyPathBase implements Iterable<PolyPathBase> {
   }
 } // end of PolyPathBase class
 
-class PolyPath64 extends PolyPathBase {
+export class PolyPath64 extends PolyPathBase {
   public polygon?: Path64;
 
   constructor(parent?: PolyPathBase) {
@@ -2853,7 +2853,7 @@ class PolyPath64 extends PolyPathBase {
   }
 }
 
-class PolyPathD extends PolyPathBase {
+export class PolyPathD extends PolyPathBase {
   private _scale: number = 0
   get scale() { return this._scale }
   set scale(newvalue: number) { this._scale = newvalue }
@@ -2889,15 +2889,15 @@ class PolyPathD extends PolyPathBase {
   }
 }
 
-class PolyTree64 extends PolyPath64 { }
+export class PolyTree64 extends PolyPath64 { }
 
-class PolyTreeD extends PolyPathD {
+export class PolyTreeD extends PolyPathD {
   override get scale(): number {
     return super.scale;
   }
 }
 
-class ClipperLibException extends Error {
+export class ClipperLibException extends Error {
   constructor(description: string) {
     super(description);
   }
