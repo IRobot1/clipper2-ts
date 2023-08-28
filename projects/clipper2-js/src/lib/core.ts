@@ -1,4 +1,4 @@
-﻿/*******************************************************************************
+/*******************************************************************************
 * Author    :  Angus Johnson                                                   *
 * Date      :  26 July 2023                                                    *
 * Website   :  http://www.angusj.com                                           *
@@ -9,7 +9,9 @@
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Core.cs
-// Converted by ChatGPT August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+// Support for USINGZ removed
+//
+// Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
 // ChatGTP has few points to note:
 //
@@ -59,14 +61,16 @@ export enum PipResult {
 
 export class Path64 extends Array<Point64> {
   
-  constructor(capacity?: number);
-  constructor(path: Point64[]);
+  //constructor(capacity?: number);
+  //constructor(path: Point64[]);
   constructor(capacityOrPath?: number | Point64[]) {
     super();
     if (Array.isArray(capacityOrPath)) {
       this.push(...capacityOrPath);
     }
   }
+
+  clear() { this.length = 0 }
 
   override toString(): string {
     return this.map(p => p.toString()).join(' ');
@@ -75,14 +79,16 @@ export class Path64 extends Array<Point64> {
 
 export class Paths64 extends Array<Path64> {
 
-  constructor(capacity?: number);
-  constructor(paths: Path64[]);
+  //constructor(capacity?: number);
+  //constructor(paths: Path64[]);
   constructor(capacityOrPaths?: number | Path64[]) {
     super();
     if (Array.isArray(capacityOrPaths)) {
       this.push(...capacityOrPaths);
     }
   }
+
+  clear() { this.length = 0 }
 
   override toString(): string {
     return this.map(p => p.toString()).join('\n');
@@ -107,14 +113,16 @@ export class PathD extends Array<PointD> {
 
 export class PathsD extends Array<PathD> {
   
-  constructor(capacity?: number);
-  constructor(paths: PathD[]);
+  //constructor(capacity?: number);
+  //constructor(paths: PathD[]);
   constructor(capacityOrPaths?: number | PathD[]) {
     super();
     if (Array.isArray(capacityOrPaths)) {
       this.push(...capacityOrPaths);
     }
   }
+
+  clear() { this.length = 0 }
 
   override toString(precision: number = 2): string {
     return this.map(p => p.toString(precision)).join('\n');
@@ -211,10 +219,10 @@ export class Rect64 {
   public right: number;
   public bottom: number;
 
-  constructor(l: number, t: number, r: number, b: number);
-  constructor(isValid: boolean);
-  constructor(rec: Rect64);
-  constructor(lOrIsValidOrRec: number | boolean | Rect64, t?: number, r?: number, b?: number) {
+  //constructor(l: number, t: number, r: number, b: number);
+  //constructor(isValid: boolean);
+  //constructor(rec: Rect64);
+  constructor(lOrIsValidOrRec?: number | boolean | Rect64, t?: number, r?: number, b?: number) {
     if (typeof lOrIsValidOrRec === 'boolean') {
       if (lOrIsValidOrRec) {
         this.left = 0;
@@ -233,10 +241,10 @@ export class Rect64 {
       this.right = r as number;
       this.bottom = b as number;
     } else {
-      this.left = lOrIsValidOrRec.left;
-      this.top = lOrIsValidOrRec.top;
-      this.right = lOrIsValidOrRec.right;
-      this.bottom = lOrIsValidOrRec.bottom;
+      this.left = lOrIsValidOrRec!.left;
+      this.top = lOrIsValidOrRec!.top;
+      this.right = lOrIsValidOrRec!.right;
+      this.bottom = lOrIsValidOrRec!.bottom;
     }
   }
 
@@ -265,7 +273,7 @@ export class Rect64 {
   }
 
   public contains(pt: Point64): boolean {
-    return pt.X > this.left && pt.X < this.right && pt.Y > this.top && pt.Y < this.bottom;
+    return pt.x > this.left && pt.x < this.right && pt.y > this.top && pt.y < this.bottom;
   }
 
   public containsRect(rec: Rect64): boolean {
@@ -308,8 +316,8 @@ export class PointD {
         this.y = xOrPt.y;
       }
     } else {
-      this.x = (<Point64>xOrPt).X * (yOrScale || 1);
-      this.y = (<Point64>xOrPt).Y * (yOrScale || 1);
+      this.x = (<Point64>xOrPt).x * (yOrScale || 1);
+      this.y = (<Point64>xOrPt).y * (yOrScale || 1);
     }
   }
 
@@ -318,13 +326,13 @@ export class PointD {
   }
 
   public static equals(lhs: PointD, rhs: PointD): boolean {
-    return InternalClipper.IsAlmostZero(lhs.x - rhs.x) &&
-      InternalClipper.IsAlmostZero(lhs.y - rhs.y);
+    return InternalClipper.isAlmostZero(lhs.x - rhs.x) &&
+      InternalClipper.isAlmostZero(lhs.y - rhs.y);
   }
 
   public static notEquals(lhs: PointD, rhs: PointD): boolean {
-    return !InternalClipper.IsAlmostZero(lhs.x - rhs.x) ||
-      !InternalClipper.IsAlmostZero(lhs.y - rhs.y);
+    return !InternalClipper.isAlmostZero(lhs.x - rhs.x) ||
+      !InternalClipper.isAlmostZero(lhs.y - rhs.y);
   }
 
   public equals(obj: any): boolean {
@@ -345,48 +353,48 @@ export class PointD {
 }
 
 export class Point64 {
-  public X: number;
-  public Y: number;
+  public x: number;
+  public y: number;
 
   constructor(pt: Point64 | PointD);
   constructor(x: number, y: number);
   constructor(pt: Point64 | PointD, scale?: number);
   constructor(xOrPt: number | Point64 | PointD, yOrScale?: number) {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
-      this.X = Math.round(xOrPt);
-      this.Y = Math.round(yOrScale);
+      this.x = Math.round(xOrPt);
+      this.y = Math.round(yOrScale);
     } else if (xOrPt instanceof Point64) {
       if (yOrScale !== undefined) {
-        this.X = Math.round(xOrPt.X * yOrScale);
-        this.Y = Math.round(xOrPt.Y * yOrScale);
+        this.x = Math.round(xOrPt.x * yOrScale);
+        this.y = Math.round(xOrPt.y * yOrScale);
       } else {
-        this.X = xOrPt.X;
-        this.Y = xOrPt.Y;
+        this.x = xOrPt.x;
+        this.y = xOrPt.y;
       }
     } else {
-      this.X = Math.round((<PointD>xOrPt).x * (yOrScale || 1));
-      this.Y = Math.round((<PointD>xOrPt).y * (yOrScale || 1));
+      this.x = Math.round((<PointD>xOrPt).x * (yOrScale || 1));
+      this.y = Math.round((<PointD>xOrPt).y * (yOrScale || 1));
     }
   }
 
   public static equals(lhs: Point64, rhs: Point64): boolean {
-    return lhs.X === rhs.X && lhs.Y === rhs.Y;
+    return lhs.x === rhs.x && lhs.y === rhs.y;
   }
 
   public static notEquals(lhs: Point64, rhs: Point64): boolean {
-    return lhs.X !== rhs.X || lhs.Y !== rhs.Y;
+    return lhs.x !== rhs.x || lhs.y !== rhs.y;
   }
 
   public static add(lhs: Point64, rhs: Point64): Point64 {
-    return new Point64(lhs.X + rhs.X, lhs.Y + rhs.Y);
+    return new Point64(lhs.x + rhs.x, lhs.y + rhs.y);
   }
 
   public static subtract(lhs: Point64, rhs: Point64): Point64 {
-    return new Point64(lhs.X - rhs.X, lhs.Y - rhs.Y);
+    return new Point64(lhs.x - rhs.x, lhs.y - rhs.y);
   }
 
   public toString(): string {
-    return `${this.X},${this.Y} `;
+    return `${this.x},${this.y} `;
   }
 
   public equals(obj: any): boolean {
@@ -407,7 +415,7 @@ export enum PointInPolygonResult {
   IsOn
 }
 
-class InternalClipper {
+export class InternalClipper {
   static readonly MaxInt64: number = 9223372036854775807;
   static readonly MaxCoord: number = InternalClipper.MaxInt64 / 4;
   static readonly max_coord: number = InternalClipper.MaxCoord;
@@ -420,42 +428,42 @@ class InternalClipper {
 
   private static readonly precision_range_error: string = "Error: Precision is out of range.";
 
-  static CheckPrecision(precision: number): void {
+  static checkPrecision(precision: number): void {
     if (precision < -8 || precision > 8)
       throw new Error(this.precision_range_error);
   }
 
-  static IsAlmostZero(value: number): boolean {
+  static isAlmostZero(value: number): boolean {
     return (Math.abs(value) <= this.floatingPointTolerance);
   }
 
-  static CrossProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
-    return ((pt2.X - pt1.X) * (pt3.Y - pt2.Y) - (pt2.Y - pt1.Y) * (pt3.X - pt2.X));
+  static crossProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
+    return ((pt2.x - pt1.x) * (pt3.y - pt2.y) - (pt2.y - pt1.y) * (pt3.x - pt2.x));
   }
 
-  static DotProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
-    return ((pt2.X - pt1.X) * (pt3.X - pt2.X) + (pt2.Y - pt1.Y) * (pt3.Y - pt2.Y));
+  static dotProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
+    return ((pt2.x - pt1.x) * (pt3.x - pt2.x) + (pt2.y - pt1.y) * (pt3.y - pt2.y));
   }
 
-  static CrossProductPointD(vec1: PointD, vec2: PointD): number {
+  static crossProductPointD(vec1: PointD, vec2: PointD): number {
     return (vec1.y * vec2.x - vec2.y * vec1.x);
   }
 
-  static DotProductPointD(vec1: PointD, vec2: PointD): number {
+  static dotProductPointD(vec1: PointD, vec2: PointD): number {
     return (vec1.x * vec2.x + vec1.y * vec2.y);
   }
 
-  static CheckCastInt64(val: number): number {
+  static checkCastInt64(val: number): number {
     if ((val >= this.max_coord) || (val <= this.min_coord)) return this.Invalid64;
     return Math.round(val);
   }
 
 
   public static getIntersectPt(ln1a: Point64, ln1b: Point64, ln2a: Point64, ln2b: Point64): { ip: Point64, success: boolean } {
-    const dy1 = ln1b.Y - ln1a.Y;
-    const dx1 = ln1b.X - ln1a.X;
-    const dy2 = ln2b.Y - ln2a.Y;
-    const dx2 = ln2b.X - ln2a.X;
+    const dy1 = ln1b.y - ln1a.y;
+    const dx1 = ln1b.x - ln1a.x;
+    const dy2 = ln2b.y - ln2a.y;
+    const dx2 = ln2b.x - ln2a.x;
     const det = dy1 * dx2 - dy2 * dx1;
 
     let ip: Point64;
@@ -465,18 +473,18 @@ class InternalClipper {
       return { ip, success: false };
     }
 
-    const t = ((ln1a.X - ln2a.X) * dy2 - (ln1a.Y - ln2a.Y) * dx2) / det;
+    const t = ((ln1a.x - ln2a.x) * dy2 - (ln1a.y - ln2a.y) * dx2) / det;
     if (t <= 0.0) ip = ln1a;
     else if (t >= 1.0) ip = ln1b;
-    else ip = new Point64(ln1a.X + t * dx1, ln1a.Y + t * dy1);
+    else ip = new Point64(ln1a.x + t * dx1, ln1a.y + t * dy1);
     return { ip, success: true };
   }
 
   public static getIntersectPoint(ln1a: Point64, ln1b: Point64, ln2a: Point64, ln2b: Point64): { ip: Point64, success: boolean } {
-    const dy1 = ln1b.Y - ln1a.Y;
-    const dx1 = ln1b.X - ln1a.X;
-    const dy2 = ln2b.Y - ln2a.Y;
-    const dx2 = ln2b.X - ln2a.X;
+    const dy1 = ln1b.y - ln1a.y;
+    const dx1 = ln1b.x - ln1a.x;
+    const dy2 = ln2b.y - ln2a.y;
+    const dx2 = ln2b.x - ln2a.x;
     const det = dy1 * dx2 - dy2 * dx1;
 
     let ip: Point64;
@@ -486,35 +494,35 @@ class InternalClipper {
       return { ip, success: false };
     }
 
-    const t = ((ln1a.X - ln2a.X) * dy2 - (ln1a.Y - ln2a.Y) * dx2) / det;
+    const t = ((ln1a.x - ln2a.x) * dy2 - (ln1a.y - ln2a.y) * dx2) / det;
     if (t <= 0.0) ip = ln1a;
     else if (t >= 1.0) ip = ln2a;
-    else ip = new Point64(ln1a.X + t * dx1, ln1a.Y + t * dy1);
+    else ip = new Point64(ln1a.x + t * dx1, ln1a.y + t * dy1);
     return { ip, success: true };
   }
 
   public static segsIntersect(seg1a: Point64, seg1b: Point64, seg2a: Point64, seg2b: Point64, inclusive: boolean = false): boolean {
     if (inclusive) {
-      const res1 = InternalClipper.CrossProduct(seg1a, seg2a, seg2b);
-      const res2 = InternalClipper.CrossProduct(seg1b, seg2a, seg2b);
+      const res1 = InternalClipper.crossProduct(seg1a, seg2a, seg2b);
+      const res2 = InternalClipper.crossProduct(seg1b, seg2a, seg2b);
       if (res1 * res2 > 0) return false;
-      const res3 = InternalClipper.CrossProduct(seg2a, seg1a, seg1b);
-      const res4 = InternalClipper.CrossProduct(seg2b, seg1a, seg1b);
+      const res3 = InternalClipper.crossProduct(seg2a, seg1a, seg1b);
+      const res4 = InternalClipper.crossProduct(seg2b, seg1a, seg1b);
       if (res3 * res4 > 0) return false;
       return (res1 !== 0 || res2 !== 0 || res3 !== 0 || res4 !== 0);
     } else {
-      return (InternalClipper.CrossProduct(seg1a, seg2a, seg2b) * InternalClipper.CrossProduct(seg1b, seg2a, seg2b) < 0) &&
-        (InternalClipper.CrossProduct(seg2a, seg1a, seg1b) * InternalClipper.CrossProduct(seg2b, seg1a, seg1b) < 0);
+      return (InternalClipper.crossProduct(seg1a, seg2a, seg2b) * InternalClipper.crossProduct(seg1b, seg2a, seg2b) < 0) &&
+        (InternalClipper.crossProduct(seg2a, seg1a, seg1b) * InternalClipper.crossProduct(seg2b, seg1a, seg1b) < 0);
     }
   }
 
   public static getClosestPtOnSegment(offPt: Point64, seg1: Point64, seg2: Point64): Point64 {
-    if (seg1.X === seg2.X && seg1.Y === seg2.Y) return seg1;
-    const dx = seg2.X - seg1.X;
-    const dy = seg2.Y - seg1.Y;
-    let q = ((offPt.X - seg1.X) * dx + (offPt.Y - seg1.Y) * dy) / ((dx * dx) + (dy * dy));
+    if (seg1.x === seg2.x && seg1.y === seg2.y) return seg1;
+    const dx = seg2.x - seg1.x;
+    const dy = seg2.y - seg1.y;
+    let q = ((offPt.x - seg1.x) * dx + (offPt.y - seg1.y) * dy) / ((dx * dx) + (dy * dy));
     if (q < 0) q = 0; else if (q > 1) q = 1;
-    return new Point64(seg1.X + Math.round(q * dx), seg1.Y + Math.round(q * dy));
+    return new Point64(seg1.x + Math.round(q * dx), seg1.y + Math.round(q * dy));
   }
 
   public static pointInPolygon(pt: Point64, polygon: Path64): PointInPolygonResult {
@@ -523,11 +531,11 @@ class InternalClipper {
 
     if (len < 3) return PointInPolygonResult.IsOutside;
 
-    while (start < len && polygon[start].Y === pt.Y) start++;
+    while (start < len && polygon[start].y === pt.y) start++;
     if (start === len) return PointInPolygonResult.IsOutside;
 
     let d: number = 0;
-    let isAbove = polygon[start].Y < pt.Y;
+    let isAbove = polygon[start].y < pt.y;
     const startingAbove = isAbove;
     let val = 0;
     let i = start + 1;
@@ -541,29 +549,29 @@ class InternalClipper {
       }
 
       if (isAbove) {
-        while (i < end && polygon[i].Y < pt.Y) i++;
+        while (i < end && polygon[i].y < pt.y) i++;
         if (i === end) continue;
       } else {
-        while (i < end && polygon[i].Y > pt.Y) i++;
+        while (i < end && polygon[i].y > pt.y) i++;
         if (i === end) continue;
       }
 
       const curr = polygon[i];
       const prev = i > 0 ? polygon[i - 1] : polygon[len - 1];
 
-      if (curr.Y === pt.Y) {
-        if (curr.X === pt.X || (curr.Y === prev.Y && (pt.X < prev.X !== pt.X < curr.X))) return PointInPolygonResult.IsOn;
+      if (curr.y === pt.y) {
+        if (curr.x === pt.x || (curr.y === prev.y && (pt.x < prev.x !== pt.x < curr.x))) return PointInPolygonResult.IsOn;
         i++;
         if (i === start) break;
         continue;
       }
 
-      if (pt.X < curr.X && pt.X < prev.X) {
+      if (pt.x < curr.x && pt.x < prev.x) {
         // we're only interested in edges crossing on the left
-      } else if (pt.X > prev.X && pt.X > curr.X) {
+      } else if (pt.x > prev.x && pt.x > curr.x) {
         val = 1 - val; // toggle val
       } else {
-        d = InternalClipper.CrossProduct(prev, curr, pt);
+        d = InternalClipper.crossProduct(prev, curr, pt);
         if (d === 0) return PointInPolygonResult.IsOn;
         if ((d < 0) === isAbove) val = 1 - val;
       }
@@ -573,7 +581,7 @@ class InternalClipper {
 
     if (isAbove !== startingAbove) {
       if (i === len) i = 0;
-      else d = InternalClipper.CrossProduct(polygon[i - 1], polygon[i], pt);
+      else d = InternalClipper.crossProduct(polygon[i - 1], polygon[i], pt);
       if (d === 0) return PointInPolygonResult.IsOn;
       if ((d < 0) === isAbove) val = 1 - val;
     }
