@@ -10,13 +10,12 @@
 *           :  and Daniel Gosnell for their invaluable assistance with C#.     *
 * License   :  http://www.boost.org/LICENSE_1_0.txt                            *
 *******************************************************************************/
+
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.cs
 // Removed support for USINGZ
 //
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
-//
-// ChatGTP has few points to note:
 //
 
 import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, PathsD, Point64, PointD, Rect64, RectD } from "./core";
@@ -217,7 +216,7 @@ export class Clipper {
     if (cnt < 3) return 0.0;
     let prevPt = path[cnt - 1];
     for (let pt of path) {
-      a += (prevPt.Y + pt.Y) * (prevPt.X - pt.X);
+      a += (prevPt.y + pt.y) * (prevPt.x - pt.x);
       prevPt = pt;
     }
     return a * 0.5;
@@ -288,22 +287,22 @@ export class Clipper {
   public static offsetPath(path: Path64, dx: number, dy: number): Path64 {
     const result = new Path64(path.length);
     for (let pt of path)
-      result.push(new Point64(pt.X + dx, pt.Y + dy));
+      result.push(new Point64(pt.x + dx, pt.y + dy));
     return result;
   }
 
   public static scalePoint64(pt: Point64, scale: number): Point64 {
     const result: Point64 = {
-      X: Math.round(pt.X * scale),
-      Y: Math.round(pt.Y * scale)
+      x: Math.round(pt.x * scale),
+      y: Math.round(pt.y * scale)
     };
     return result;
   }
 
   public static scalePointD(pt: Point64, scale: number): PointD {
     const result: PointD = {
-      x: pt.X * scale,
-      y: pt.Y * scale
+      x: pt.x * scale,
+      y: pt.y * scale
     };
     return result;
   }
@@ -322,7 +321,7 @@ export class Clipper {
     if (InternalClipper.isAlmostZero(scale - 1)) return path;
     const result: Path64 = [];
     for (const pt of path)
-      result.push({ X: pt.X * scale, Y: pt.Y * scale });
+      result.push({ x: pt.x * scale, y: pt.y * scale });
     return result;
   }
 
@@ -354,7 +353,7 @@ export class Clipper {
   public static scalePath64(path: PathD, scale: number): Path64 {
     const res: Path64 = [];
     for (const pt of path)
-      res.push({ X: Math.round(pt.x * scale), Y: Math.round(pt.y * scale) });
+      res.push({ x: Math.round(pt.x * scale), y: Math.round(pt.y * scale) });
     return res;
   }
 
@@ -368,7 +367,7 @@ export class Clipper {
   public static scalePathD(path: Path64, scale: number): PathD {
     const res: PathD = [];
     for (const pt of path)
-      res.push({ x: pt.X * scale, y: pt.Y * scale });
+      res.push({ x: pt.x * scale, y: pt.y * scale });
     return res;
   }
 
@@ -382,7 +381,7 @@ export class Clipper {
   public static path64(path: PathD): Path64 {
     const result: Path64 = [];
     for (const pt of path) {
-      result.push({ X: pt.x, Y: pt.y });
+      result.push({ x: pt.x, y: pt.y });
     }
     return result;
   }
@@ -406,7 +405,7 @@ export class Clipper {
   public static pathD(path: Path64): PathD {
     const result: PathD = [];
     for (const pt of path) {
-      result.push({ x: pt.X, y: pt.Y });
+      result.push({ x: pt.x, y: pt.y });
     }
     return result;
   }
@@ -414,7 +413,7 @@ export class Clipper {
   public static translatePath(path: Path64, dx: number, dy: number): Path64 {
     const result: Path64 = [];
     for (const pt of path) {
-      result.push({ X: pt.X + dx, Y: pt.Y + dy });
+      result.push({ x: pt.x + dx, y: pt.y + dy });
     }
     return result;
   }
@@ -470,10 +469,10 @@ export class Clipper {
   public static getBounds(path: Path64): Rect64 {
     const result: Rect64 = InvalidRect64;
     for (const pt of path) {
-      if (pt.X < result.left) result.left = pt.X;
-      if (pt.X > result.right) result.right = pt.X;
-      if (pt.Y < result.top) result.top = pt.Y;
-      if (pt.Y > result.bottom) result.bottom = pt.Y;
+      if (pt.x < result.left) result.left = pt.x;
+      if (pt.x > result.right) result.right = pt.x;
+      if (pt.y < result.top) result.top = pt.y;
+      if (pt.y > result.bottom) result.bottom = pt.y;
     }
     return result.left === Number.MAX_SAFE_INTEGER ? { left: 0, right: 0, top: 0, bottom: 0 } : result;
   }
@@ -482,10 +481,10 @@ export class Clipper {
     const result: Rect64 = InvalidRect64;
     for (const path of paths) {
       for (const pt of path) {
-        if (pt.X < result.left) result.left = pt.X;
-        if (pt.X > result.right) result.right = pt.X;
-        if (pt.Y < result.top) result.top = pt.Y;
-        if (pt.Y > result.bottom) result.bottom = pt.Y;
+        if (pt.x < result.left) result.left = pt.x;
+        if (pt.x > result.right) result.right = pt.x;
+        if (pt.y < result.top) result.top = pt.y;
+        if (pt.y > result.bottom) result.bottom = pt.y;
       }
     }
     return result.left === Number.MAX_SAFE_INTEGER ? { left: 0, right: 0, top: 0, bottom: 0 } : result;

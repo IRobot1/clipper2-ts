@@ -17,19 +17,6 @@ import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, 
 //
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
-// ChatGTP has few points to note:
-//
-// In TypeScript, we don't need to specify [Flags] as in C# for enumerations. Enums in TypeScript by default have integer values that increment by one from the previous member, starting from 0.
-// In TypeScript, we don't have direct equivalents for readonly struct, so I've used classes.
-// TypeScript doesn't have custom operators (== and !=), so I've converted them to static and instance methods.
-// I've removed the IComparer interfaces, converting them into class methods
-// I've converted C# properties (like Count) to the more JavaScript/TypeScript idiomatic properties/methods (like length).
-// In TypeScript, the Array type is used instead of List, so methods like Clear() on List become the length = 0 technique in TypeScript to clear an array.
-// The naming convention for TypeScript typically uses camelCase for methods, but I kept the original casing from the C# code.Adjust according to your TypeScript coding standards if needed.
-// TypeScript does not have a built-in swap function. The array destructuring method is used for the swap operation.
-// C# uses built-in methods like double.IsNegativeInfinity() whereas in TypeScript, we use the Number object (e.g., Number.isNegativeInfinity()).
-// The C# out modifier does not have a direct translation in TypeScript. I modified the function popScanline to return a value or undefined.
-// Some bitwise operations were used in the original code. You'll need to review them in the context of the entire class and the related classes.
 
 export enum PointInPolygonResult {
   IsOn = 0,

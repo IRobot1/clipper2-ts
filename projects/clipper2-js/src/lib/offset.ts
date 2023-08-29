@@ -1,4 +1,4 @@
-﻿/*******************************************************************************
+/*******************************************************************************
 * Author    :  Angus Johnson                                                   *
 * Date      :  7 August 2023                                                   *
 * Website   :  http://www.angusj.com                                           *
@@ -6,6 +6,13 @@
 * Purpose   :  Path Offset (Inflate/Shrink)                                    *
 * License   :  http://www.boost.org/LICENSE_1_0.txt                            *
 *******************************************************************************/
+
+//
+// Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Core.cs
+// Removed support for USINGZ
+//
+// Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+//
 
 import { Clipper } from "./clipper";
 import { FillRule, InternalClipper, Path64, Paths64, Point64, PointD, Rect64 } from "./core";
@@ -231,11 +238,11 @@ export class ClipperOffset {
   }
 
   private getPerpendic(pt: Point64, norm: PointD): Point64 {
-    return new Point64(pt.X + norm.x * this._groupDelta, pt.Y + norm.y * this._groupDelta);
+    return new Point64(pt.x + norm.x * this._groupDelta, pt.y + norm.y * this._groupDelta);
   }
 
   private getPerpendicD(pt: Point64, norm: PointD): PointD {
-    return new PointD(pt.X + norm.x * this._groupDelta, pt.Y + norm.y * this._groupDelta);
+    return new PointD(pt.x + norm.x * this._groupDelta, pt.y + norm.y * this._groupDelta);
   }
 
   private doSquare(group: Group, path: Path64, j: number, k: number): void {
@@ -251,7 +258,7 @@ export class ClipperOffset {
 
     const absDelta = Math.abs(this._groupDelta);
     // now offset the original vertex delta units along unit vector
-    let ptQ = new PointD(path[j].X, path[j].Y); // Assuming Path64 has X and Y as properties.
+    let ptQ = new PointD(path[j].x, path[j].y); // Assuming Path64 has X and Y as properties.
     ptQ = this.translatePoint(ptQ, absDelta * vec.x, absDelta * vec.y);
 
     // get perpendicular vertices
@@ -278,8 +285,8 @@ export class ClipperOffset {
   private doMiter(group: Group, path: Path64, j: number, k: number, cosA: number): void {
     const q = this._groupDelta / (cosA + 1);
     group.outPath.push(new Point64(
-      path[j].X + (this._normals[k].x + this._normals[j].x) * q,
-      path[j].Y + (this._normals[k].y + this._normals[j].y) * q
+      path[j].x + (this._normals[k].x + this._normals[j].x) * q,
+      path[j].y + (this._normals[k].y + this._normals[j].y) * q
     ));
   }
 
@@ -299,7 +306,7 @@ export class ClipperOffset {
     const pt = path[j];
     let offsetVec = new PointD(this._normals[k].x * this._groupDelta, this._normals[k].y * this._groupDelta);
     if (j === k) offsetVec.negate();
-    group.outPath.push(new Point64(pt.X + offsetVec.x, pt.Y + offsetVec.y));
+    group.outPath.push(new Point64(pt.x + offsetVec.x, pt.y + offsetVec.y));
     if (angle > -Math.PI + 0.01) {
       const steps = Math.ceil(this._stepsPerRad * Math.abs(angle));
       for (let i = 1; i < steps; i++) {
@@ -307,7 +314,7 @@ export class ClipperOffset {
           offsetVec.x * this._stepCos - this._stepSin * offsetVec.y,
           offsetVec.x * this._stepSin + offsetVec.y * this._stepCos
         );
-        group.outPath.push(new Point64(pt.X + offsetVec.x, pt.Y + offsetVec.y));
+        group.outPath.push(new Point64(pt.x + offsetVec.x, pt.y + offsetVec.y));
       }
     }
     group.outPath.push(this.getPerpendic(pt, this._normals[j]));

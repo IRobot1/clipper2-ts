@@ -13,20 +13,6 @@
 //
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
-// ChatGTP has few points to note:
-//
-// Properties in C# can be replicated with getters and setters in TypeScript.
-// C# attributes like[MethodImpl(MethodImplOptions.AggressiveInlining)] don't have a direct TypeScript equivalent. TypeScript (and JavaScript) doesn't provide control over inlining at this level.So, I removed them.
-// internal in C# implies module / package - level visibility.In TypeScript, the default visibility is public, but you can use private or protected to restrict visibility.If you're working with ES6 modules, you could achieve module-level visibility by not exporting types or functions.
-// The C# Exception class is replaced with the standard JavaScript Error class.
-// TypeScript does not have out parameters, so I've changed the methods to return an object with the intersection point and a boolean indicating if the intersection was successful.
-// I've handled the overloaded constructors using TypeScript's ability to define multiple constructor signatures.
-// For the GetHashCode method, since JavaScript does not have the same concept of hash codes like C#, I've used a simple XOR operation for the two values. This might not provide optimal hash distribution, but it's a basic approach you can start with.Adjust as needed based on your use case.
-// I converted the struct to a class, handled operator overloads as static functions
-// JavaScript (and TypeScript) does not have structs or the long type. The closest representation for numbers is just the number type.
-// In TypeScript, arrays are usually extended using the built-in Array<T> class. The List<T> class from C# can be represented as the Array<T> class in TypeScript.
-// The foreach loop in C# is translated to the map function in TypeScript.
-// The constructors handle both capacity (which doesn't have a direct equivalent in JavaScript or TypeScript, so it's effectively ignored)
 
 // Note: all clipping operations except for Difference are commutative.
 export enum ClipType {
@@ -356,10 +342,10 @@ export class Point64 {
   public x: number;
   public y: number;
 
-  constructor(pt: Point64 | PointD);
-  constructor(x: number, y: number);
-  constructor(pt: Point64 | PointD, scale?: number);
-  constructor(xOrPt: number | Point64 | PointD, yOrScale?: number) {
+  //constructor(pt: Point64 | PointD);
+  //constructor(x: number, y: number);
+  //constructor(pt: Point64 | PointD, scale?: number);
+  constructor(xOrPt?: number | Point64 | PointD, yOrScale?: number) {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
       this.x = Math.round(xOrPt);
       this.y = Math.round(yOrScale);

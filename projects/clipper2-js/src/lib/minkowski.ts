@@ -1,4 +1,4 @@
-﻿/*******************************************************************************
+/*******************************************************************************
 * Author    :  Angus Johnson                                                   *
 * Date      :  15 October 2022                                                 *
 * Website   :  http://www.angusj.com                                           *
@@ -6,6 +6,13 @@
 * Purpose   :  Minkowski Sum and Difference                                    *
 * License   :  http://www.boost.org/LICENSE_1_0.txt                            *
 *******************************************************************************/
+
+//
+// Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Core.cs
+// Removed support for USINGZ
+//
+// Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+//
 
 import { Clipper } from "./clipper";
 import { Point64, PointD } from "./core";
