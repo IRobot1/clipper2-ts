@@ -106,9 +106,9 @@ export class PointD implements IPoint64 {
 export class ClipperOffset {
 
   private static Tolerance: number = 1.0E-12;
-  private _groupList: Group[] = [];
-  private _normals: PointD[] = [];
-  private _solution: Point64[][] = [];
+  private _groupList: Array<Group> = [];
+  private _normals: Array<PointD> = [];
+  private _solution: Array<Array<Point64>> = [];
   private _groupDelta!: number; //*0.5 for open paths; *-1.0 for negative areas
   private _delta!: number;
   private _mitLimSqr!: number;

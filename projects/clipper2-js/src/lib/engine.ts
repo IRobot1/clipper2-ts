@@ -2607,7 +2607,7 @@ export class Clipper64 extends ClipperBase {
     this.addPaths(paths, PathType.Clip);
   }
 
-  execute(clipType: ClipType, fillRule: FillRule, solutionClosed: Paths64, solutionOpen: Paths64): boolean {
+  execute(clipType: ClipType, fillRule: FillRule, solutionClosed: Paths64, solutionOpen = new Paths64()): boolean {
     solutionClosed.length = 0
     solutionOpen.length = 0
     try {
@@ -2621,28 +2621,25 @@ export class Clipper64 extends ClipperBase {
     return this._succeeded;
   }
 
-  execute(clipType: ClipType, fillRule: FillRule, solutionClosed: Paths64): boolean {
-    return this.execute(clipType, fillRule, solutionClosed, new Paths64());
-  }
 
-  execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64, openPaths: Paths64): boolean {
-    polytree.clear();
-    openPaths.length = 0
-    this._using_polytree = true;
-    try {
-      this.executeInternal(clipType, fillRule);
-      this.buildTree(polytree, openPaths);
-    } catch (error) {
-      this._succeeded = false;
-    }
+  //execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64, openPaths: Paths64): boolean {
+  //  polytree.clear();
+  //  openPaths.length = 0
+  //  this._using_polytree = true;
+  //  try {
+  //    this.executeInternal(clipType, fillRule);
+  //    this.buildTree(polytree, openPaths);
+  //  } catch (error) {
+  //    this._succeeded = false;
+  //  }
 
-    this.clearSolutionOnly();
-    return this._succeeded;
-  }
+  //  this.clearSolutionOnly();
+  //  return this._succeeded;
+  //}
 
-  execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64): boolean {
-    return this.execute(clipType, fillRule, polytree, new Paths64());
-  }
+  //execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64): boolean {
+  //  return this.execute(clipType, fillRule, polytree, new Paths64());
+  //}
 }
 
 class NodeEnumerator implements Iterator<PolyPathBase> {

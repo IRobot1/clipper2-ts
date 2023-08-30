@@ -20,7 +20,9 @@
 
 import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathType, Paths64, Point64, Rect64 } from "./core";
 import { Clipper64, PointInPolygonResult, PolyPath64, PolyTree64 } from "./engine";
+import { Minkowski } from "./minkowski";
 import { ClipperOffset, EndType, JoinType } from "./offset";
+import { RectClip64, RectClipLines64 } from "./rectclip";
 
 export class Clipper {
 
@@ -33,11 +35,7 @@ export class Clipper {
     return this.BooleanOp(ClipType.Intersection, subject, clip, fillRule);
   }
 
-  public static Union(subject: Paths64, fillRule: FillRule): Paths64 {
-    return this.BooleanOp(ClipType.Union, subject, null, fillRule);
-  }
-
-  public static Union(subject: Paths64, clip: Paths64, fillRule: FillRule): Paths64 {
+  public static Union(subject: Paths64, clip?: Paths64, fillRule= FillRule.EvenOdd): Paths64 {
     return this.BooleanOp(ClipType.Union, subject, clip, fillRule);
   }
 
@@ -49,31 +47,31 @@ export class Clipper {
     return this.BooleanOp(ClipType.Xor, subject, clip, fillRule);
   }
 
-  public static BooleanOp(clipType: ClipType, subject?: Paths64, clip?: Paths64, fillRule: FillRule): Paths64 {
+  public static BooleanOp(clipType: ClipType, subject?: Paths64, clip?: Paths64, fillRule = FillRule.EvenOdd): Paths64 {
     const solution: Paths64 = new Paths64();
     if (!subject) return solution;
     const c: Clipper64 = new Clipper64();
-    c.AddPaths(subject, PathType.Subject);
+    c.addPaths(subject, PathType.Subject);
     if (clip)
-      c.AddPaths(clip, PathType.Clip);
-    c.Execute(clipType, fillRule, solution);
+      c.addPaths(clip, PathType.Clip);
+    c.execute(clipType, fillRule, solution);
     return solution;
   }
 
-  public static BooleanOp(clipType: ClipType, subject: Paths64, clip: Paths64, polytree: PolyTree64, fillRule: FillRule): void {
-    if (!subject) return;
-    const c: Clipper64 = new Clipper64();
-    c.AddPaths(subject, PathType.Subject);
-    if (clip)
-      c.AddPaths(clip, PathType.Clip);
-    c.Execute(clipType, fillRule, polytree);
-  }
+  //public static BooleanOp(clipType: ClipType, subject: Paths64, clip: Paths64, polytree: PolyTree64, fillRule: FillRule): void {
+  //  if (!subject) return;
+  //  const c: Clipper64 = new Clipper64();
+  //  c.addPaths(subject, PathType.Subject);
+  //  if (clip)
+  //    c.addPaths(clip, PathType.Clip);
+  //  c.execute(clipType, fillRule, polytree);
+  //}
 
   public static InflatePaths(paths: Paths64, delta: number, joinType: JoinType, endType: EndType, miterLimit: number = 2.0): Paths64 {
     const co: ClipperOffset = new ClipperOffset(miterLimit);
-    co.AddPaths(paths, joinType, endType);
+    co.addPaths(paths, joinType, endType);
     const solution: Paths64 = new Paths64();
-    co.Execute(delta, solution);
+    co.execute(delta, solution);
     return solution;
   }
 

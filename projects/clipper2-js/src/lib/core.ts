@@ -151,7 +151,7 @@ export class Point64 implements IPoint64 {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
       this.x = Math.round(xOrPt);
       this.y = Math.round(yOrScale);
-    } else if (xOrPt instanceof Point64) {
+    } else {
       if (yOrScale !== undefined) {
         this.x = Math.round(xOrPt.x * yOrScale);
         this.y = Math.round(xOrPt.y * yOrScale);
@@ -255,7 +255,7 @@ export class InternalClipper {
     return { ip, success: true };
   }
 
-  public static getIntersectPoint(ln1a: Point64, ln1b: IPoint64, ln2a: Point64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
+  public static getIntersectPoint(ln1a: IPoint64, ln1b: IPoint64, ln2a: IPoint64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
     const dy1 = ln1b.y - ln1a.y;
     const dx1 = ln1b.x - ln1a.x;
     const dy2 = ln2b.y - ln2a.y;
