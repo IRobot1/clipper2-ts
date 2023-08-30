@@ -64,9 +64,6 @@ export class Rect64 {
   public right: number;
   public bottom: number;
 
-  //constructor(l: number, t: number, r: number, b: number);
-  //constructor(isValid: boolean);
-  //constructor(rec: Rect64);
   constructor(lOrIsValidOrRec?: number | boolean | Rect64, t?: number, r?: number, b?: number) {
     if (typeof lOrIsValidOrRec === 'boolean') {
       if (lOrIsValidOrRec) {

@@ -3,8 +3,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "module": "CommonJs",
-    "types": [ "jest" ]
+    "types": [ "jest" ],
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*.spec.ts",

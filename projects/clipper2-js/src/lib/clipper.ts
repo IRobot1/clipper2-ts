@@ -26,8 +26,9 @@ import { RectClip64, RectClipLines64 } from "./rectclip";
 
 export class Clipper {
 
-  private static invalidRect64: Rect64 = new Rect64(false);
+  private static invalidRect64: Rect64
   public static get InvalidRect64(): Rect64 {
+    if (!Clipper.invalidRect64) Clipper.invalidRect64 = new Rect64(false);
     return this.invalidRect64;
   }
 
@@ -35,7 +36,7 @@ export class Clipper {
     return this.BooleanOp(ClipType.Intersection, subject, clip, fillRule);
   }
 
-  public static Union(subject: Paths64, clip?: Paths64, fillRule= FillRule.EvenOdd): Paths64 {
+  public static Union(subject: Paths64, clip?: Paths64, fillRule = FillRule.EvenOdd): Paths64 {
     return this.BooleanOp(ClipType.Union, subject, clip, fillRule);
   }
 
@@ -214,7 +215,7 @@ export class Clipper {
       if (pt.y < result.top) result.top = pt.y;
       if (pt.y > result.bottom) result.bottom = pt.y;
     }
-    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64( 0, 0, 0, 0 ) : result;
+    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64(0, 0, 0, 0) : result;
   }
 
   public static getBoundsPaths(paths: Paths64): Rect64 {
@@ -227,7 +228,7 @@ export class Clipper {
         if (pt.y > result.bottom) result.bottom = pt.y;
       }
     }
-    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64( 0, 0, 0, 0 ) : result;
+    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64(0, 0, 0, 0) : result;
   }
 
   static makePath(arr: number[]): Path64 {

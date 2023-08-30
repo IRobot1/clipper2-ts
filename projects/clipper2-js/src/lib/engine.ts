@@ -2544,8 +2544,6 @@ export class ClipperBase {
   protected buildTree(polytree: PolyPathBase, solutionOpen: Paths64): void {
     polytree.clear();
     solutionOpen.length = 0
-    //if (this._hasOpenPaths)
-    //  solutionOpen.capacity = this._outrecList.length;
 
     let i = 0;
     while (i < this._outrecList.length) {
