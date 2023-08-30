@@ -15,7 +15,7 @@
 //
 
 import { Clipper } from "./clipper";
-import { Point64, PointD } from "./core";
+import { FillRule, Point64 } from "./core";
 
 
 export class Minkowski {
@@ -59,21 +59,8 @@ export class Minkowski {
     return Clipper.Union(this.minkowskiInternal(pattern, path, true, isClosed), FillRule.NonZero);
   }
 
-  public static sumD(pattern: PointD[], path: PointD[], isClosed: boolean, decimalPlaces: number = 2): PointD[][] {
-    let scale = Math.pow(10, decimalPlaces);
-    let tmp = Clipper.Union(this.minkowskiInternal(Clipper.scalePath64(pattern, scale),
-      Clipper.scalePath64(path, scale), true, isClosed), FillRule.NonZero);
-    return Clipper.scalePathsD(tmp, 1 / scale);
-  }
-
   public static diff(pattern: Point64[], path: Point64[], isClosed: boolean): Point64[][] {
     return Clipper.Union(this.minkowskiInternal(pattern, path, false, isClosed), FillRule.NonZero);
   }
 
-  public static diffD(pattern: PointD[], path: PointD[], isClosed: boolean, decimalPlaces: number = 2): PointD[][] {
-    let scale = Math.pow(10, decimalPlaces);
-    let tmp = Clipper.Union(this.minkowskiInternal(Clipper.scalePath64(pattern, scale),
-      Clipper.scalePath64(path, scale), false, isClosed), FillRule.NonZero);
-    return Clipper.scalePathsD(tmp, 1 / scale);
-  }
 }

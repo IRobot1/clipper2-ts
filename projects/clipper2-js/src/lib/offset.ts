@@ -15,7 +15,7 @@
 //
 
 import { Clipper } from "./clipper";
-import { FillRule, InternalClipper, Path64, Paths64, Point64, PointD, Rect64 } from "./core";
+import { FillRule, IPoint64, InternalClipper, Path64, Paths64, Point64, Rect64 } from "./core";
 import { Clipper64, PolyTree64 } from "./engine";
 
 export enum JoinType {
@@ -50,20 +50,73 @@ class Group {
   }
 }
 
+export class PointD implements IPoint64 {
+  public x: number;
+  public y: number;
+
+  constructor(xOrPt: number | PointD | Point64, yOrScale?: number) {
+    if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
+      this.x = xOrPt;
+      this.y = yOrScale;
+    } else if (xOrPt instanceof PointD) {
+      if (yOrScale !== undefined) {
+        this.x = xOrPt.x * yOrScale;
+        this.y = xOrPt.y * yOrScale;
+      } else {
+        this.x = xOrPt.x;
+        this.y = xOrPt.y;
+      }
+    } else {
+      this.x = (<Point64>xOrPt).x * (yOrScale || 1);
+      this.y = (<Point64>xOrPt).y * (yOrScale || 1);
+    }
+  }
+
+  public toString(precision: number = 2): string {
+    return `${this.x.toFixed(precision)},${this.y.toFixed(precision)}`;
+  }
+
+  public static equals(lhs: PointD, rhs: PointD): boolean {
+    return InternalClipper.isAlmostZero(lhs.x - rhs.x) &&
+      InternalClipper.isAlmostZero(lhs.y - rhs.y);
+  }
+
+  public static notEquals(lhs: PointD, rhs: PointD): boolean {
+    return !InternalClipper.isAlmostZero(lhs.x - rhs.x) ||
+      !InternalClipper.isAlmostZero(lhs.y - rhs.y);
+  }
+
+  public equals(obj: any): boolean {
+    if (obj instanceof PointD) {
+      return PointD.equals(this, obj);
+    }
+    return false;
+  }
+
+  public negate(): void {
+    this.x = -this.x;
+    this.y = -this.y;
+  }
+
+  //  public getHashCode(): number {
+  //    return this.x ^ this.y;  // XOR-based hash combination. Adjust if needed.
+  //  }
+}
+
 export class ClipperOffset {
 
   private static Tolerance: number = 1.0E-12;
   private _groupList: Group[] = [];
   private _normals: PointD[] = [];
   private _solution: Point64[][] = [];
-  private _groupDelta: number; //*0.5 for open paths; *-1.0 for negative areas
-  private _delta: number;
-  private _mitLimSqr: number;
-  private _stepsPerRad: number;
-  private _stepSin: number;
-  private _stepCos: number;
-  private _joinType: JoinType;
-  private _endType: EndType;
+  private _groupDelta!: number; //*0.5 for open paths; *-1.0 for negative areas
+  private _delta!: number;
+  private _mitLimSqr!: number;
+  private _stepsPerRad!: number;
+  private _stepSin!: number;
+  private _stepCos!: number;
+  private _joinType!: JoinType;
+  private _endType!: EndType;
   public ArcTolerance: number;
   public MergeGroups: boolean;
   public MiterLimit: number;
@@ -237,11 +290,11 @@ export class ClipperOffset {
     }
   }
 
-  private getPerpendic(pt: Point64, norm: PointD): Point64 {
+  private getPerpendic(pt: IPoint64, norm: PointD): Point64 {
     return new Point64(pt.x + norm.x * this._groupDelta, pt.y + norm.y * this._groupDelta);
   }
 
-  private getPerpendicD(pt: Point64, norm: PointD): PointD {
+  private getPerpendicD(pt: IPoint64, norm: PointD): PointD {
     return new PointD(pt.x + norm.x * this._groupDelta, pt.y + norm.y * this._groupDelta);
   }
 
@@ -250,7 +303,7 @@ export class ClipperOffset {
     if (j === k) {
       vec = new PointD(this._normals[j].y, -this._normals[j].x);
     } else {
-      vec = this.getAvgUnitVector(
+      vec = ClipperOffset.getAvgUnitVector(
         new PointD(-this._normals[k].y, this._normals[k].x),
         new PointD(this._normals[j].y, -this._normals[j].x)
       );

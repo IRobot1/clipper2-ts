@@ -10,7 +10,7 @@
 *******************************************************************************/
 
 import { Clipper } from "./clipper";
-import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathD, PathType, Paths64, PathsD, Point64, Rect64 } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathD, PathType, Paths64, Point64, Rect64 } from "./core";
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Engine.cs
@@ -177,8 +177,8 @@ class HorzJoin {
 ///////////////////////////////////////////////////////////////////
 
 export class Active {
-  bot!: Point64
-  top!: Point64
+  bot!: IPoint64
+  top!: IPoint64
   curX!: number;// current (updated at every new scanline)
   dx: number;
   windDx!: number;// 1 or -1 depending on winding direction
@@ -2645,120 +2645,6 @@ export class Clipper64 extends ClipperBase {
   }
 }
 
-export class ClipperD extends ClipperBase {
-
-  private readonly precisionRangeError: string = "Error: Precision is out of range.";
-  private readonly _scale: number;
-  private readonly _invScale: number;
-
-  constructor(roundingDecimalPrecision: number = 2) {
-    super();
-    if (roundingDecimalPrecision < -8 || roundingDecimalPrecision > 8) {
-      throw new Error(this.precisionRangeError);
-    }
-    this._scale = Math.pow(10, roundingDecimalPrecision);
-    this._invScale = 1 / this._scale;
-  }
-
-  addPath(path: PathD, polytype: PathType, isOpen: boolean = false): void {
-    super.addPath(Clipper.scalePath64(path, this._scale), polytype, isOpen);
-  }
-
-  addPaths(paths: PathsD, polytype: PathType, isOpen: boolean = false): void {
-    super.addPaths(Clipper.scalePaths64(paths, this._scale), polytype, isOpen);
-  }
-
-  addSubject(path: PathD): void {
-    this.addPath(path, PathType.Subject);
-  }
-
-  addOpenSubject(path: PathD): void {
-    this.addPath(path, PathType.Subject, true);
-  }
-
-  addClip(path: PathD): void {
-    this.addPath(path, PathType.Clip);
-  }
-
-  addSubject(paths: PathsD): void {
-    this.addPaths(paths, PathType.Subject);
-  }
-
-  addOpenSubject(paths: PathsD): void {
-    this.addPaths(paths, PathType.Subject, true);
-  }
-
-  addClip(paths: PathsD): void {
-    this.addPaths(paths, PathType.Clip);
-  }
-
-  execute(clipType: ClipType, fillRule: FillRule, solutionClosed: PathsD, solutionOpen: PathsD): boolean {
-    const solClosed64: Paths64 = new Paths64();
-    const solOpen64: Paths64 = new Paths64();
-
-    let success = true;
-    solutionClosed.length = 0
-    solutionOpen.length = 0
-    try {
-      this.executeInternal(clipType, fillRule);
-      this.buildPaths(solClosed64, solOpen64);
-    } catch (error) {
-      success = false;
-    }
-
-    this.clearSolutionOnly();
-    if (!success) return false;
-
-    //solutionClosed.capacity = solClosed64.length;
-    for (const path of solClosed64) {
-      solutionClosed.push(Clipper.scalePathD(path, this._invScale));
-    }
-
-    //solutionOpen.capacity = solOpen64.length;
-    for (const path of solOpen64) {
-      solutionOpen.push(Clipper.scalePathD(path, this._invScale));
-    }
-
-    return true;
-  }
-
-  execute(clipType: ClipType, fillRule: FillRule, solutionClosed: PathsD): boolean {
-    return this.execute(clipType, fillRule, solutionClosed, new PathsD());
-  }
-
-  execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTreeD, openPaths: PathsD): boolean {
-    polytree.clear();
-    openPaths.length = 0
-    this._using_polytree = true;
-    (polytree as PolyPathD).scale = this._scale;
-
-    const oPaths: Paths64 = new Paths64();
-    let success = true;
-    try {
-      this.executeInternal(clipType, fillRule);
-      this.buildTree(polytree, oPaths);
-    } catch (error) {
-      success = false;
-    }
-
-    this.clearSolutionOnly();
-    if (!success) return false;
-
-    if (oPaths.length > 0) {
-      //openPaths.capacity = oPaths.length;
-      for (const path of oPaths) {
-        openPaths.push(Clipper.scalePathD(path, this._invScale));
-      }
-    }
-
-    return true;
-  }
-
-  execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTreeD): boolean {
-    return this.execute(clipType, fillRule, polytree, new PathsD());
-  }
-} // end of ClipperD class
-
 class NodeEnumerator implements Iterator<PolyPathBase> {
   private position = -1;
   private readonly _nodes: PolyPathBase[];
@@ -2867,49 +2753,9 @@ export class PolyPath64 extends PolyPathBase {
   }
 }
 
-export class PolyPathD extends PolyPathBase {
-  private _scale: number = 0
-  get scale() { return this._scale }
-  set scale(newvalue: number) { this._scale = newvalue }
-
-  public polygon?: PathD;
-
-  constructor(parent?: PolyPathBase) {
-    super(parent);
-  }
-
-  addChild(p: Path64): PolyPathBase {
-    const newChild = new PolyPathD(this);
-    (newChild as PolyPathD).scale = this.scale;
-    (newChild as PolyPathD).polygon = Clipper.scalePathD(p, 1 / this.scale);
-    this._childs.push(newChild);
-    return newChild;
-  }
-
-  get(index: number): PolyPathD {
-    if (index < 0 || index >= this._childs.length) {
-      throw new Error("InvalidOperationException");
-    }
-    return this._childs[index] as PolyPathD;
-  }
-
-  area(): number {
-    let result = this.polygon ? Clipper.area(this.polygon) : 0;
-    for (const polyPathBase of this._childs) {
-      const child = polyPathBase as PolyPathD;
-      result += child.area();
-    }
-    return result;
-  }
-}
 
 export class PolyTree64 extends PolyPath64 { }
 
-export class PolyTreeD extends PolyPathD {
-  override get scale(): number {
-    return super.scale;
-  }
-}
 
 export class ClipperLibException extends Error {
   constructor(description: string) {
