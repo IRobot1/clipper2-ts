@@ -7,6 +7,8 @@
 * License   :  http://www.boost.org/LICENSE_1_0.txt                            *
 *******************************************************************************/
 
+import { PointInPolygonResult } from "./engine";
+
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Core.cs
 // Removed support for USINGZ
@@ -45,74 +47,81 @@ export enum PipResult {
   OnEdge
 }
 
-export class Path64 extends Array<Point64> {
+export interface IPoint64 {
+  x: number;
+  y: number;
+}
+
+//export interface IPointD {
+//  x: number;
+//  y: number;
+//}
+
+export class Path64 extends Array<IPoint64> {
   
   //constructor(capacity?: number);
   //constructor(path: Point64[]);
-  constructor(capacityOrPath?: number | Point64[]) {
-    super();
-    if (Array.isArray(capacityOrPath)) {
-      this.push(...capacityOrPath);
-    }
-  }
+//  constructor(path?: Point64[]) {
+//    super();
 
-  clear() { this.length = 0 }
+//    if (Array.isArray(path)) {
+//      this.push(...path);
+//    }
+//  }
 
-  override toString(): string {
-    return this.map(p => p.toString()).join(' ');
-  }
+
+//  override toString(): string {
+//    return this.map(p => p.toString()).join(' ');
+//  }
 }
 
 export class Paths64 extends Array<Path64> {
 
   //constructor(capacity?: number);
   //constructor(paths: Path64[]);
-  constructor(capacityOrPaths?: number | Path64[]) {
-    super();
-    if (Array.isArray(capacityOrPaths)) {
-      this.push(...capacityOrPaths);
-    }
-  }
+  //constructor(paths?:  Path64[]) {
+  //  super();
+  //  if (Array.isArray(paths)) {
+  //    this.push(...paths);
+  //  }
+  //}
 
-  clear() { this.length = 0 }
-
-  override toString(): string {
-    return this.map(p => p.toString()).join('\n');
-  }
+  //override toString(): string {
+  //  return this.map(p => p.toString()).join('\n');
+  //}
 }
 
-export class PathD extends Array<PointD> {
-  
-  constructor(capacity?: number);
-  constructor(path: PointD[]);
-  constructor(capacityOrPath?: number | PointD[]) {
-    super();
-    if (Array.isArray(capacityOrPath)) {
-      this.push(...capacityOrPath);
-    }
-  }
 
-  override toString(precision: number = 2): string {
-    return this.map(p => p.toString(precision)).join(' ');
-  }
+export class PathD extends Array<IPoint64> {
+  
+  //constructor(capacity?: number);
+  //constructor(path: PointD[]);
+  //constructor(path?: PointD[]) {
+  //  super();
+  //  if (Array.isArray(path)) {
+  //    this.push(...path);
+  //  }
+  //}
+
+  //override toString(precision: number = 2): string {
+  //  return this.map(p => p.toString(precision)).join(' ');
+  //}
 }
 
 export class PathsD extends Array<PathD> {
   
   //constructor(capacity?: number);
   //constructor(paths: PathD[]);
-  constructor(capacityOrPaths?: number | PathD[]) {
-    super();
-    if (Array.isArray(capacityOrPaths)) {
-      this.push(...capacityOrPaths);
-    }
-  }
+  //constructor(paths?: PathD[]) {
+  //  super();
+  //  if (Array.isArray(paths)) {
+  //    this.push(...paths);
+  //  }
+  //}
 
-  clear() { this.length = 0 }
-
-  override toString(precision: number = 2): string {
-    return this.map(p => p.toString(precision)).join('\n');
-  }
+  //override toString(precision: number = 2): string {
+  //  return this.map(p => p.toString(precision)).join('\n');
+  //}
 }
 
 
@@ -122,9 +131,9 @@ export class RectD {
   public right: number;
   public bottom: number;
 
-  constructor(l: number, t: number, r: number, b: number);
-  constructor(isValid: boolean);
-  constructor(rec: RectD);
+  //constructor(l: number, t: number, r: number, b: number);
+  //constructor(isValid: boolean);
+  //constructor(rec: RectD);
   constructor(lOrIsValidOrRec: number | boolean | RectD, t?: number, r?: number, b?: number) {
     if (typeof lOrIsValidOrRec === 'boolean') {
       if (lOrIsValidOrRec) {
@@ -258,7 +267,7 @@ export class Rect64 {
     return new Point64((this.left + this.right) / 2, (this.top + this.bottom) / 2);
   }
 
-  public contains(pt: Point64): boolean {
+  public contains(pt: IPoint64): boolean {
     return pt.x > this.left && pt.x < this.right && pt.y > this.top && pt.y < this.bottom;
   }
 
@@ -282,13 +291,14 @@ export class Rect64 {
 }
 
 
-export class PointD {
+
+export class PointD implements IPoint64 {
   public x: number;
   public y: number;
 
-  constructor(pt: PointD | Point64);
-  constructor(pt: PointD | Point64, scale: number);
-  constructor(x: number, y: number);
+  //constructor(pt: PointD | Point64);
+  //constructor(pt: PointD | Point64, scale: number);
+  //constructor(x: number, y: number);
   constructor(xOrPt: number | PointD | Point64, yOrScale?: number) {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
       this.x = xOrPt;
@@ -338,7 +348,8 @@ export class PointD {
 //  }
 }
 
-export class Point64 {
+
+export class Point64 implements IPoint64 {
   public x: number;
   public y: number;
 
@@ -417,11 +428,11 @@ export class InternalClipper {
     return (Math.abs(value) <= this.floatingPointTolerance);
   }
 
-  static crossProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
+  static crossProduct(pt1: IPoint64, pt2: IPoint64, pt3: IPoint64): number {
     return ((pt2.x - pt1.x) * (pt3.y - pt2.y) - (pt2.y - pt1.y) * (pt3.x - pt2.x));
   }
 
-  static dotProduct(pt1: Point64, pt2: Point64, pt3: Point64): number {
+  static dotProduct(pt1: IPoint64, pt2: IPoint64, pt3: IPoint64): number {
     return ((pt2.x - pt1.x) * (pt3.x - pt2.x) + (pt2.y - pt1.y) * (pt3.y - pt2.y));
   }
 
@@ -439,14 +450,14 @@ export class InternalClipper {
   }
 
 
-  public static getIntersectPt(ln1a: Point64, ln1b: Point64, ln2a: Point64, ln2b: Point64): { ip: Point64, success: boolean } {
+  public static getIntersectPt(ln1a: IPoint64, ln1b: IPoint64, ln2a: IPoint64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
     const dy1 = ln1b.y - ln1a.y;
     const dx1 = ln1b.x - ln1a.x;
     const dy2 = ln2b.y - ln2a.y;
     const dx2 = ln2b.x - ln2a.x;
     const det = dy1 * dx2 - dy2 * dx1;
 
-    let ip: Point64;
+    let ip: IPoint64;
 
     if (det === 0.0) {
       ip = new Point64(0, 0);
@@ -460,7 +471,7 @@ export class InternalClipper {
     return { ip, success: true };
   }
 
-  public static getIntersectPoint(ln1a: Point64, ln1b: Point64, ln2a: Point64, ln2b: Point64): { ip: Point64, success: boolean } {
+  public static getIntersectPoint(ln1a: Point64, ln1b: IPoint64, ln2a: Point64, ln2b: IPoint64): { ip: Point64, success: boolean } {
     const dy1 = ln1b.y - ln1a.y;
     const dx1 = ln1b.x - ln1a.x;
     const dy2 = ln2b.y - ln2a.y;
@@ -481,7 +492,7 @@ export class InternalClipper {
     return { ip, success: true };
   }
 
-  public static segsIntersect(seg1a: Point64, seg1b: Point64, seg2a: Point64, seg2b: Point64, inclusive: boolean = false): boolean {
+  public static segsIntersect(seg1a: IPoint64, seg1b: IPoint64, seg2a: IPoint64, seg2b: IPoint64, inclusive: boolean = false): boolean {
     if (inclusive) {
       const res1 = InternalClipper.crossProduct(seg1a, seg2a, seg2b);
       const res2 = InternalClipper.crossProduct(seg1b, seg2a, seg2b);
@@ -496,7 +507,7 @@ export class InternalClipper {
     }
   }
 
-  public static getClosestPtOnSegment(offPt: Point64, seg1: Point64, seg2: Point64): Point64 {
+  public static getClosestPtOnSegment(offPt: IPoint64, seg1: Point64, seg2: Point64): Point64 {
     if (seg1.x === seg2.x && seg1.y === seg2.y) return seg1;
     const dx = seg2.x - seg1.x;
     const dy = seg2.y - seg1.y;
@@ -505,7 +516,7 @@ export class InternalClipper {
     return new Point64(seg1.x + Math.round(q * dx), seg1.y + Math.round(q * dy));
   }
 
-  public static pointInPolygon(pt: Point64, polygon: Path64): PointInPolygonResult {
+  public static pointInPolygon(pt: IPoint64, polygon: Path64): PointInPolygonResult {
     const len = polygon.length;
     let start = 0;
 

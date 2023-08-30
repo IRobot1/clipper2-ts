@@ -18,7 +18,7 @@
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
 
-import { ClipType, FillRule, InternalClipper, Path64, PathD, PathType, Paths64, PathsD, Point64, PointD, Rect64, RectD } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathD, PathType, Paths64, PathsD, Point64, PointD, Rect64, RectD } from "./core";
 import { Clipper64, ClipperD, PointInPolygonResult, PolyPath64, PolyPathD, PolyTree64, PolyTreeD } from "./engine";
 import { EndType, JoinType } from "./offset";
 
@@ -607,28 +607,28 @@ export class Clipper {
     const result: PathsD = new PathsD();
     for (const polyPathBase of polyTree) {
       const p = polyPathBase as PolyPathD;
-      addPolyNodeToPathsD(p, result);
+      Clipper.addPolyNodeToPathsD(p, result);
     }
 
     return result;
   }
 
-  public static perpendicDistFromLineSqrd(pt: PointD, line1: PointD, line2: PointD): number {
-    const a = pt.x - line1.x;
-    const b = pt.y - line1.y;
-    const c = line2.x - line1.x;
-    const d = line2.y - line1.y;
-    if (c === 0 && d === 0) return 0;
-    return sqr(a * d - c * b) / (c * c + d * d);
-  }
+  //public static perpendicDistFromLineSqrd(pt: PointD, line1: PointD, line2: PointD): number {
+  //  const a = pt.x - line1.x;
+  //  const b = pt.y - line1.y;
+  //  const c = line2.x - line1.x;
+  //  const d = line2.y - line1.y;
+  //  if (c === 0 && d === 0) return 0;
+  //  return Clipper.sqr(a * d - c * b) / (c * c + d * d);
+  //}
 
-  public static perpendicDistFromLineSqrd(pt: Point64, line1: Point64, line2: Point64): number {
+  public static perpendicDistFromLineSqrd(pt: IPoint64, line1: Point64, line2: Point64): number {
     const a = pt.x - line1.x;
     const b = pt.y - line1.y;
     const c = line2.x - line1.x;
     const d = line2.y - line1.y;
     if (c === 0 && d === 0) return 0;
-    return sqr(a * d - c * b) / (c * c + d * d);
+    return Clipper.sqr(a * d - c * b) / (c * c + d * d);
   }
 
   static rdp(path: Path64, begin: number, end: number, epsSqrd: number, flags: boolean[]): void {
@@ -639,7 +639,7 @@ export class Clipper {
       flags[end--] = false;
     }
     for (let i = begin + 1; i < end; i++) {
-      const d = perpendicDistFromLineSqrd(path[i], path[begin], path[end]);
+      const d = Clipper.perpendicDistFromLineSqrd(path[i], path[begin], path[end]);
       if (d <= max_d) continue;
       max_d = d;
       idx = i;

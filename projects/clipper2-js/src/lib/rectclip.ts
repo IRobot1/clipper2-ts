@@ -14,19 +14,21 @@
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
 
-import { InternalClipper, Path64, Paths64, Point64, Rect64 } from "./core";
+import { Clipper } from "./clipper";
+import { IPoint64, InternalClipper, Path64, Paths64, Point64, Rect64 } from "./core";
 import { PointInPolygonResult } from "./engine";
 
 export class OutPt2 {
   next?: OutPt2;
   prev?: OutPt2;
 
-  pt: Point64;
+  pt: IPoint64;
   ownerIdx: number;
-  edge?: OutPt2[];
+  edge?: Array<OutPt2 | undefined>;
 
-  constructor(pt: Point64) {
+  constructor(pt: IPoint64) {
     this.pt = pt;
+    this.ownerIdx = 0
   }
 }
 
@@ -35,42 +37,42 @@ enum Location {
 }
 
 export class RectClip64 {
-  protected rect_: Rect64;
-  protected mp_: Point64;
-  protected rectPath_: Path64;
-  protected pathBounds_: Rect64;
-  protected results_: (OutPt2 | undefined)[];
-  protected edges_: (OutPt2 | undefined)[][];
-  protected currIdx_ = -1;
+  protected rect: Rect64;
+  protected mp: Point64;
+  protected rectPath: Path64;
+  protected pathBounds!: Rect64;
+  protected results: Array<OutPt2 | undefined>
+  protected edges: Array<OutPt2 | undefined>[];
+  protected currIdx = -1;
 
   constructor(rect: Rect64) {
-    this.rect_ = rect;
-    this.mp_ = rect.midPoint();
-    this.rectPath_ = rect.asPath();
-    this.results_ = [];
-    this.edges_ = Array(8).fill(undefined).map(() => []);
+    this.rect = rect;
+    this.mp = rect.midPoint();
+    this.rectPath = rect.asPath();
+    this.results = [];
+    this.edges = Array(8).fill(undefined).map(() => []);
   }
 
-  protected add(pt: Point64, startingNewPath: boolean = false): OutPt2 {
-    let currIdx = this.results_.length;
+  protected add(pt: IPoint64, startingNewPath: boolean = false): OutPt2  {
+    let currIdx = this.results.length;
     let result: OutPt2;
     if (currIdx === 0 || startingNewPath) {
       result = new OutPt2(pt);
-      this.results_.push(result);
+      this.results.push(result);
       result.ownerIdx = currIdx;
       result.prev = result;
       result.next = result;
     } else {
       currIdx--;
-      const prevOp = this.results_[currIdx];
-      if (prevOp!.pt === pt) return prevOp;
+      const prevOp = this.results[currIdx];
+      if (prevOp!.pt === pt) return prevOp!;
       result = new OutPt2(pt);
       result.ownerIdx = currIdx;
       result.next = prevOp!.next;
       prevOp!.next!.prev = result;
       prevOp!.next = result;
       result.prev = prevOp!;
-      this.results_[currIdx] = result;
+      this.results[currIdx] = result;
     }
     return result;
   }
@@ -124,7 +126,7 @@ export class RectClip64 {
     return op!.prev;
   }
 
-  private static getEdgesForPt(pt: Point64, rec: Rect64): number {
+  private static getEdgesForPt(pt: IPoint64, rec: Rect64): number {
     let result = 0;
     if (pt.x === rec.left) result = 1;
     else if (pt.x === rec.right) result = 4;
@@ -133,7 +135,7 @@ export class RectClip64 {
     return result;
   }
 
-  private static isHeadingClockwise(pt1: Point64, pt2: Point64, edgeIdx: number): boolean {
+  private static isHeadingClockwise(pt1: IPoint64, pt2: IPoint64, edgeIdx: number): boolean {
     switch (edgeIdx) {
       case 0: return pt2.y < pt1.y;
       case 1: return pt2.x > pt1.x;
@@ -142,11 +144,11 @@ export class RectClip64 {
     }
   }
 
-  private static hasHorzOverlap(left1: Point64, right1: Point64, left2: Point64, right2: Point64): boolean {
+  private static hasHorzOverlap(left1: IPoint64, right1: IPoint64, left2: IPoint64, right2: IPoint64): boolean {
     return (left1.x < right2.x) && (right1.x > left2.x);
   }
 
-  private static hasVertOverlap(top1: Point64, bottom1: Point64, top2: Point64, bottom2: Point64): boolean {
+  private static hasVertOverlap(top1: IPoint64, bottom1: IPoint64, top2: IPoint64, bottom2: IPoint64): boolean {
     return (top1.y < bottom2.y) && (bottom1.y > top2.y);
   }
 
@@ -179,39 +181,39 @@ export class RectClip64 {
 
   private addCorner(prev: Location, curr: Location): void {
     if (RectClip64.headingClockwise(prev, curr))
-      this.add(this.rectPath_[prev]);
+      this.add(this.rectPath[prev]);
     else
-      this.add(this.rectPath_[curr]);
+      this.add(this.rectPath[curr]);
   }
 
   private addCornerByRef(loc: Location, isClockwise: boolean): void {
     if (isClockwise) {
-      this.add(this.rectPath_[loc]);
+      this.add(this.rectPath[loc]);
       loc = RectClip64.getAdjacentLocation(loc, true);
     } else {
       loc = RectClip64.getAdjacentLocation(loc, false);
-      this.add(this.rectPath_[loc]);
+      this.add(this.rectPath[loc]);
     }
   }
 
-  protected static getLocation(rec: Rect64, pt: Point64): [boolean, Location] {
+  protected static getLocation(rec: Rect64, pt: IPoint64): { success: boolean, loc: Location } {
     let loc: Location;
 
     if (pt.x === rec.left && pt.y >= rec.top && pt.y <= rec.bottom) {
       loc = Location.left; // pt on rec
-      return [false, loc];
+      return { success: false, loc }
     }
     if (pt.x === rec.right && pt.y >= rec.top && pt.y <= rec.bottom) {
       loc = Location.right; // pt on rec
-      return [false, loc];
+      return { success: false, loc };
     }
     if (pt.y === rec.top && pt.x >= rec.left && pt.x <= rec.right) {
       loc = Location.top; // pt on rec
-      return [false, loc];
+      return { success: false, loc };
     }
     if (pt.y === rec.bottom && pt.x >= rec.left && pt.x <= rec.right) {
       loc = Location.bottom; // pt on rec
-      return [false, loc];
+      return { success: false, loc };
     }
     if (pt.x < rec.left) loc = Location.left;
     else if (pt.x > rec.right) loc = Location.right;
@@ -219,91 +221,91 @@ export class RectClip64 {
     else if (pt.y > rec.bottom) loc = Location.bottom;
     else loc = Location.inside;
 
-    return [true, loc];
+    return { success: true, loc };
   }
 
-  protected static getIntersection(rectPath: Path64, p: Point64, p2: Point64, loc: Location): [boolean, Location, Point64] {
+  protected static getIntersection(rectPath: Path64, p: IPoint64, p2: IPoint64, loc: Location): { success: boolean, loc: Location, ip: IPoint64 } {
     // gets the pt of intersection between rectPath and segment(p, p2) that's closest to 'p'
     // when result == false, loc will remain unchanged
-    let ip: Point64 = new Point64();
+    let ip: IPoint64 = new Point64();
     switch (loc) {
       case Location.left:
         if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
         } else if (p.y < rectPath[0].y && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
           loc = Location.top;
         } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
           loc = Location.bottom;
         }
         else {
-          return [false, loc, ip];
+          return { success: false, loc, ip }
         }
         break;
 
       case Location.right:
         if (InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
         } else if (p.y < rectPath[0].y && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
           loc = Location.top;
         } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
           loc = Location.bottom;
         } else {
-          return false;
+          return { success: false, loc, ip }
         }
         break;
       case Location.top:
         if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
         } else if (p.x < rectPath[0].x && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
           loc = Location.left;
         } else if (p.x > rectPath[1].x && InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
           loc = Location.right;
         } else {
-          return false;
+          return { success: false, loc, ip }
         }
         break;
 
       case Location.bottom:
         if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
         } else if (p.x < rectPath[3].x && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
           loc = Location.left;
         } else if (p.x > rectPath[2].x && InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
           loc = Location.right;
         } else {
-          return false;
+          return { success: false, loc, ip }
         }
         break;
 
       case Location.inside:
       case Location.inside:
         if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
           loc = Location.left;
         } else if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
           loc = Location.top;
         } else if (InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
           loc = Location.right;
         } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]);
+          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
           loc = Location.bottom;
         } else {
-          return false;
+          return { success: false, loc, ip }
         }
         break;
 
     }
-    return [true, loc, ip];
+    return { success:true, loc, ip };
   }
 
   // TODO: handle ref - protected void GetNextLocation(Path64 path, ref Location loc, ref int i, int highI)
@@ -315,47 +317,47 @@ export class RectClip64 {
 
     switch (loc) {
       case Location.left:
-        while (i <= highI && path[i].X <= this.rect_.left) i++;
+        while (i <= highI && path[i].X <= this.rect.left) i++;
         if (i > highI) break;
-        if (path[i].X >= this.rect_.right) loc = Location.right;
-        else if (path[i].Y <= this.rect_.top) loc = Location.top;
-        else if (path[i].Y >= this.rect_.bottom) loc = Location.bottom;
+        if (path[i].X >= this.rect.right) loc = Location.right;
+        else if (path[i].Y <= this.rect.top) loc = Location.top;
+        else if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
         else loc = Location.inside;
         break;
 
       case Location.top:
-        while (i <= highI && path[i].Y <= this.rect_.top) i++;
+        while (i <= highI && path[i].Y <= this.rect.top) i++;
         if (i > highI) break;
-        if (path[i].Y >= this.rect_.bottom) loc = Location.bottom;
-        else if (path[i].X <= this.rect_.left) loc = Location.left;
-        else if (path[i].X >= this.rect_.right) loc = Location.right;
+        if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
+        else if (path[i].X <= this.rect.left) loc = Location.left;
+        else if (path[i].X >= this.rect.right) loc = Location.right;
         else loc = Location.inside;
         break;
 
       case Location.right:
-        while (i <= highI && path[i].X >= this.rect_.right) i++;
+        while (i <= highI && path[i].X >= this.rect.right) i++;
         if (i > highI) break;
-        if (path[i].X <= this.rect_.left) loc = Location.left;
-        else if (path[i].Y <= this.rect_.top) loc = Location.top;
-        else if (path[i].Y >= this.rect_.bottom) loc = Location.bottom;
+        if (path[i].X <= this.rect.left) loc = Location.left;
+        else if (path[i].Y <= this.rect.top) loc = Location.top;
+        else if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
         else loc = Location.inside;
         break;
 
       case Location.bottom:
-        while (i <= highI && path[i].Y >= this.rect_.bottom) i++;
+        while (i <= highI && path[i].Y >= this.rect.bottom) i++;
         if (i > highI) break;
-        if (path[i].Y <= this.rect_.top) loc = Location.top;
-        else if (path[i].X <= this.rect_.left) loc = Location.left;
-        else if (path[i].X >= this.rect_.right) loc = Location.right;
+        if (path[i].Y <= this.rect.top) loc = Location.top;
+        else if (path[i].X <= this.rect.left) loc = Location.left;
+        else if (path[i].X >= this.rect.right) loc = Location.right;
         else loc = Location.inside;
         break;
 
       case Location.inside:
         while (i <= highI) {
-          if (path[i].X < this.rect_.left) loc = Location.left;
-          else if (path[i].X > this.rect_.right) loc = Location.right;
-          else if (path[i].Y > this.rect_.bottom) loc = Location.bottom;
-          else if (path[i].Y < this.rect_.top) loc = Location.top;
+          if (path[i].X < this.rect.left) loc = Location.left;
+          else if (path[i].X > this.rect.right) loc = Location.right;
+          else if (path[i].Y > this.rect.bottom) loc = Location.bottom;
+          else if (path[i].Y < this.rect.top) loc = Location.top;
           else {
             this.add(path[i]);  // Assuming a similar method 'add' exists in TypeScript
             i++;
@@ -368,17 +370,22 @@ export class RectClip64 {
   }
 
   protected executeInternal(path: any[]): void {
-    if (path.length < 3 || this.rect_.isEmpty()) return;
+    if (path.length < 3 || this.rect.isEmpty()) return;
     const startLocs: Location[] = [];
 
     let firstCross: Location = Location.inside;
-    let crossingLoc = firstCross, prev = firstCross;
+    let crossingLoc: Location = firstCross, prev: Location = firstCross;
 
     let i: number, highI = path.length - 1;
-    let loc: Location;
-    if (!RectClip64.getLocation(this.rect_, path[highI], loc)) {
+    let result = RectClip64.getLocation(this.rect, path[highI])
+    let loc: Location = result.loc
+    if (!result.success) {
       i = highI - 1;
-      while (i >= 0 && !RectClip64.getLocation(this.rect_, path[i], prev)) i--;
+      while (i >= 0 && !result.success) {
+        i--
+        result = RectClip64.getLocation(this.rect, path[i])
+        prev = result.loc
+      }
       if (i < 0) {
         for (const pt of path) {
           this.add(pt);
@@ -393,27 +400,28 @@ export class RectClip64 {
     i = 0;
     while (i <= highI) {
       prev = loc;
-      const prevCrossLoc = crossingLoc;
+      const prevCrossLoc: Location = crossingLoc;
       this.getNextLocation(path, loc, i, highI);
       if (i > highI) break;
 
       const prevPt = (i == 0) ? path[highI] : path[i - 1];
       crossingLoc = loc;
 
-      let ip: any; // Assuming Point64 type based on the C# code
+      let result = RectClip64.getIntersection(this.rectPath, path[i], prevPt, crossingLoc)
+      let ip: IPoint64 = result.ip
 
-      if (!RectClip64.getIntersection(this.rectPath_, path[i], prevPt, crossingLoc, ip)) {
+      if (!result.success) {
         if (prevCrossLoc == Location.inside) {
-          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp_); // Assuming mp_ exists and is defined
+          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp); // Assuming mp_ exists and is defined
           do {
             startLocs.push(prev);
             prev = RectClip64.getAdjacentLocation(prev, isClockw);
           } while (prev != loc);
           crossingLoc = prevCrossLoc;
         } else if (prev != Location.inside && prev != loc) {
-          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp_);
+          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp);
           do {
-            this.addCorner(prev, isClockw);
+            this.addCornerByRef(prev, isClockw);
           } while (prev != loc);
         }
         ++i;
@@ -428,17 +436,19 @@ export class RectClip64 {
           firstCross = crossingLoc;
           startLocs.push(prev);
         } else if (prev != crossingLoc) {
-          const isClockw = RectClip64.isClockwise(prev, crossingLoc, prevPt, path[i], this.mp_);
+          const isClockw = RectClip64.isClockwise(prev, crossingLoc, prevPt, path[i], this.mp);
           do {
-            this.addCorner(prev, isClockw);
+            this.addCornerByRef(prev, isClockw);
           } while (prev != crossingLoc);
         }
       } else if (prev != Location.inside) {
         // passing right through rect. 'ip' here will be the second
         // intersect pt but we'll also need the first intersect pt (ip2)
-        let ip2: any; // Assuming Point64 type based on the C# code
+
         loc = prev;
-        RectClip64.getIntersection(this.rectPath_, prevPt, path[i], loc, ip2);
+        result = RectClip64.getIntersection(this.rectPath, prevPt, path[i], loc);
+        let ip2: IPoint64 = result.ip
+
         if (prevCrossLoc != Location.inside && prevCrossLoc != loc)
           this.addCorner(prevCrossLoc, loc);
 
@@ -450,7 +460,7 @@ export class RectClip64 {
         loc = crossingLoc;
         this.add(ip2);
         if (ip == ip2) {
-          RectClip64.getLocation(this.rect_, path[i], loc);
+          loc = RectClip64.getLocation(this.rect, path[i]).loc;
           this.addCorner(crossingLoc, loc);
           crossingLoc = loc;
           continue;
@@ -467,10 +477,10 @@ export class RectClip64 {
 
     if (firstCross == Location.inside) {
       if (startingLoc != Location.inside) {
-        if (this.pathBounds_.contains(this.rect_) && RectClip64.path1ContainsPath2(path, this.rectPath_)) {
+        if (this.pathBounds.containsRect(this.rect) && RectClip64.path1ContainsPath2(path, this.rectPath)) {
           for (let j = 0; j < 4; j++) {
-            this.add(this.rectPath_[j]);
-            RectClip64.addToEdge(this.edges_[j * 2], this.results_[0]);
+            this.add(this.rectPath[j]);
+            RectClip64.addToEdge(this.edges[j * 2], this.results[0]!);
           }
         }
       }
@@ -479,86 +489,86 @@ export class RectClip64 {
         prev = loc;
         for (const loc2 of startLocs) {
           if (prev == loc2) continue;
-          this.addCorner(prev, RectClip64.headingClockwise(prev, loc2));
+          this.addCornerByRef(prev, RectClip64.headingClockwise(prev, loc2));
           prev = loc2;
         }
         loc = prev;
       }
       if (loc != firstCross)
-        this.addCorner(loc, RectClip64.headingClockwise(loc, firstCross));
+        this.addCornerByRef(loc, RectClip64.headingClockwise(loc, firstCross));
     }
   }
 
   public execute(paths: Array<any>): Array<any> { // Paths64 assumed to be an array
     let result: Array<any> = []; // Paths64 assumed to be an array
-    if (this.rect_.isEmpty()) return result;
+    if (this.rect.isEmpty()) return result;
 
     for (const path of paths) {
       if (path.length < 3) continue;
-      this.pathBounds_ = Clipper.getBounds(path); // assuming Clipper is a static class available in the environment
+      this.pathBounds = Clipper.getBounds(path); // assuming Clipper is a static class available in the environment
 
-      if (!this.rect_.intersects(this.pathBounds_)) continue;
-      else if (this.rect_.contains(this.pathBounds_)) {
+      if (!this.rect.intersects(this.pathBounds)) continue;
+      else if (this.rect.containsRect(this.pathBounds)) {
         result.push(path);
         continue;
       }
       this.executeInternal(path);
       this.checkEdges();
       for (let i = 0; i < 4; ++i)
-        this.tidyEdgePair(i, this.edges_[i * 2], this.edges_[i * 2 + 1]);
+        this.tidyEdgePair(i, this.edges[i * 2], this.edges[i * 2 + 1]);
 
-      for (const op of this.results_) {
+      for (const op of this.results) {
         let tmp = this.getPath(op); // assuming getPath returns an array
         if (tmp.length > 0) result.push(tmp);
       }
 
-      this.results_.splice(0, this.results_.length); // equivalent to Clear()
+      this.results.splice(0, this.results.length); // equivalent to Clear()
       for (let i = 0; i < 8; i++)
-        this.edges_[i].splice(0, this.edges_[i].length); // equivalent to Clear()
+        this.edges[i].splice(0, this.edges[i].length); // equivalent to Clear()
     }
     return result;
   }
 
   private checkEdges(): void {
-    for (let i = 0; i < this.results_.length; i++) {
-      let op = this.results_[i];
+    for (let i = 0; i < this.results.length; i++) {
+      let op = this.results[i];
       let op2 = op;
 
       if (op === undefined) continue;
 
       do {
-        if (InternalClipper.crossProduct(op2!.prev!.pt, op2.pt, op2.next!.pt) === 0) { // assuming InternalClipper is a static class available in the environment
+        if (InternalClipper.crossProduct(op2!.prev!.pt, op2!.pt, op2!.next!.pt) === 0) { // assuming InternalClipper is a static class available in the environment
           if (op2 === op) {
-            op2 = this.unlinkOpBack(op2);
+            op2 = RectClip64.unlinkOpBack(op2);
             if (op2 === undefined) break;
             op = op2.prev;
           } else {
-            op2 = this.unlinkOpBack(op2);
+            op2 = RectClip64.unlinkOpBack(op2);
             if (op2 === undefined) break;
           }
         } else {
-          op2 = op2.next;
+          op2 = op2!.next;
         }
       } while (op2 !== op);
 
       if (op2 === undefined) {
-        this.results_[i] = undefined;
+        this.results[i] = undefined;
         continue;
       }
-      this.results_[i] = op2;
+      this.results[i] = op2;
 
-      let edgeSet1 = RectClip64.getEdgesForPt(op!.prev!.pt, this.rect_);
+      let edgeSet1 = RectClip64.getEdgesForPt(op!.prev!.pt, this.rect);
       op2 = op;
       do {
-        const edgeSet2 = RectClip64.getEdgesForPt(op2!.pt, this.rect_);
-        if (edgeSet2 !== 0 && op2.edge === undefined) {
+        const edgeSet2 = RectClip64.getEdgesForPt(op2!.pt, this.rect);
+        if (edgeSet2 !== 0 && op2!.edge === undefined) {
           const combinedSet = (edgeSet1 & edgeSet2);
           for (let j = 0; j < 4; ++j) {
             if ((combinedSet & (1 << j)) !== 0) {
-              if (RectClip64.isHeadingClockwise(op2.prev!.pt, op2.pt, j))
-                RectClip64.addToEdge(this.edges_[j * 2], op2);
+              if (RectClip64.isHeadingClockwise(op2!.prev!.pt, op2!.pt, j))
+                RectClip64.addToEdge(this.edges[j * 2], op2!);
               else
-                RectClip64.addToEdge(this.edges_[j * 2 + 1], op2);
+                RectClip64.addToEdge(this.edges[j * 2 + 1], op2!);
             }
           }
         }
@@ -614,7 +624,7 @@ export class RectClip64 {
 
       if (isRejoining) {
         this.results[p2!.ownerIdx] = undefined;
-        RectClip64.setNewOwner(p2, p1!.ownerIdx);
+        RectClip64.setNewOwner(p2!, p1!.ownerIdx);
       }
 
       if (cwIsTowardLarger) {
@@ -634,9 +644,9 @@ export class RectClip64 {
       }
 
       if (!isRejoining) {
-        let new_idx = results.length;
-        results.push(p1a);
-        RectClip64.setNewOwner(p1a, new_idx);
+        let new_idx = this.results.length;
+        this.results.push(p1a);
+        RectClip64.setNewOwner(p1a!, new_idx);
       }
 
       if (cwIsTowardLarger) {
@@ -646,21 +656,21 @@ export class RectClip64 {
         op = p1;
         op2 = p2a;
       }
-      results[op.ownerIdx] = op;
-      results[op2.ownerIdx] = op2;
+      this.results[op!.ownerIdx] = op;
+      this.results[op2!.ownerIdx] = op2;
 
       // and now lots of work to get ready for the next loop
 
       let opIsLarger: boolean, op2IsLarger: boolean;
       if (isHorz) { // X
-        opIsLarger = op.pt.x > op.prev!.pt.x;
-        op2IsLarger = op2.pt.x > op2.prev!.pt.x;
+        opIsLarger = op!.pt.x > op!.prev!.pt.x;
+        op2IsLarger = op2!.pt.x > op2!.prev!.pt.x;
       } else {      // Y
-        opIsLarger = op.pt.y > op.prev!.pt.y;
-        op2IsLarger = op2.pt.y > op2.prev!.pt.y;
+        opIsLarger = op!.pt.y > op!.prev!.pt.y;
+        op2IsLarger = op2!.pt.y > op2!.prev!.pt.y;
       }
 
-      if ((op.next === op.prev) || (op.pt === op.prev.pt)) {
+      if ((op!.next === op!.prev) || (op!.pt === op!.prev!.pt)) {
         if (op2IsLarger === cwIsTowardLarger) {
           cw[i] = op2;
           ccw[j++] = undefined;
@@ -668,7 +678,7 @@ export class RectClip64 {
           ccw[j] = op2;
           cw[i++] = undefined;
         }
-      } else if ((op2.next === op2.prev) || (op2.pt === op2.prev.pt)) {
+      } else if ((op2!.next === op2!.prev) || (op2!.pt === op2!.prev!.pt)) {
         if (opIsLarger === cwIsTowardLarger) {
           cw[i] = op;
           ccw[j++] = undefined;
@@ -679,14 +689,14 @@ export class RectClip64 {
       } else if (opIsLarger === op2IsLarger) {
         if (opIsLarger === cwIsTowardLarger) {
           cw[i] = op;
-          RectClip64.uncoupleEdge(op2);
-          RectClip64.addToEdge(cw, op2);
+          RectClip64.uncoupleEdge(op2!);
+          RectClip64.addToEdge(cw, op2!);
           ccw[j++] = undefined;
         } else {
           cw[i++] = undefined;
           ccw[j] = op2;
-          RectClip64.uncoupleEdge(op);
-          RectClip64.addToEdge(ccw, op);
+          RectClip64.uncoupleEdge(op!);
+          RectClip64.addToEdge(ccw, op!);
           j = 0;
         }
       } else {
@@ -731,9 +741,6 @@ export class RectClip64 {
 }
 
 export class RectClipLines64 extends RectClip64 {
-  private pathBounds_: Rect64; // Assuming this is a property you need.
-  private results_: OutPt2[] = [];
-  private edges_: OutPt2[][] = Array(8).fill([]); // Assuming this is a property you need and initializing it with 8 empty arrays.
 
   constructor(rect: Rect64) {
     super(rect);
@@ -741,24 +748,24 @@ export class RectClipLines64 extends RectClip64 {
 
   public override execute(paths: Paths64): Paths64 {
     const result = new Paths64();
-    if (this.rect_.isEmpty()) return result; // Assuming isEmpty is a method on the Rect64 type
+    if (this.rect.isEmpty()) return result; // Assuming isEmpty is a method on the Rect64 type
     for (let path of paths) {
       if (path.length < 2) continue;
-      this.pathBounds_ = Clipper.getBounds(path);
-      if (!this.rect_.intersects(this.pathBounds_)) continue; // Assuming intersects is a method on the Rect64 type
+      this.pathBounds = Clipper.getBounds(path);
+      if (!this.rect.intersects(this.pathBounds)) continue; // Assuming intersects is a method on the Rect64 type
 
       // You need to implement the ExecuteInternal method or provide its definition.
       this.executeInternal(path);
 
-      for (let op of this.results_) {
+      for (let op of this.results) {
         let tmp = this.getPath(op);
         if (tmp.length > 0) result.push(tmp);
       }
 
       // Clean up after every loop
-      this.results_.length = 0; // Clear the array
+      this.results.length = 0; // Clear the array
       for (let i = 0; i < 8; i++) {
-        this.edges_[i].length = 0; // Clear each array
+        this.edges[i].length = 0; // Clear each array
       }
     }
     return result;
@@ -769,7 +776,7 @@ export class RectClipLines64 extends RectClip64 {
     if (!op || op === op.next) return result;
     op = op.next; // starting at path beginning 
     result.push(op!.pt);
-    let op2 = op.next!;
+    let op2 = op!.next!;
     while (op2 !== op) {
       result.push(op2.pt);
       op2 = op2.next!;
@@ -778,16 +785,21 @@ export class RectClipLines64 extends RectClip64 {
   }
 
   private override  executeInternal(path: Path64): void {
-    this.results_ = [];
-    if (path.length < 2 || this.rect_.isEmpty()) return; // Assuming `isEmpty` is a method on the rect_ type.
+    this.results = [];
+    if (path.length < 2 || this.rect.isEmpty()) return; // Assuming `isEmpty` is a method on the rect_ type.
 
     let prev: Location = Location.inside;
     let i = 1;
     const highI = path.length - 1;
 
-    let loc: Location; // Define the initial value if necessary.
-    if (!RectClipLines64.getLocation(this.rect_, path[0], loc)) {
-      while (i <= highI && !RectClipLines64.getLocation(this.rect_, path[i], prev)) i++;
+    let result = RectClipLines64.getLocation(this.rect, path[0])
+    let loc: Location = result.loc
+    if (!result.success) {
+      while (i <= highI && !result.success) {
+        i++
+        result = RectClipLines64.getLocation(this.rect, path[i])
+        prev = result.loc
+      }
       if (i > highI) {
         for (let pt of path) this.add(pt);
       }
@@ -802,11 +814,14 @@ export class RectClipLines64 extends RectClip64 {
 
       if (i > highI) break;
 
-      const prevPt: Point64 = path[i - 1];
+      const prevPt: IPoint64 = path[i - 1];
       let crossingLoc: Location = loc;
-      let ip: Point64; // Define the initial value if necessary.
 
-      if (!RectClipLines64.getIntersection(this.rectPath_, path[i], prevPt, crossingLoc, ip)) {
+      let result = RectClipLines64.getIntersection(this.rectPath, path[i], prevPt, crossingLoc)
+      let ip: IPoint64 = result.ip
+      crossingLoc = result.loc
+
+      if (!result.success) {
         i++;
         continue;
       }
@@ -815,8 +830,11 @@ export class RectClipLines64 extends RectClip64 {
         this.add(ip, true);
       } else if (prev !== Location.inside) {
         crossingLoc = prev;
-        let ip2: Point64; // Define the initial value if necessary.
-        RectClipLines64.getIntersection(this.rectPath_, prevPt, path[i], crossingLoc, ip2);
+
+        result = RectClipLines64.getIntersection(this.rectPath, prevPt, path[i], crossingLoc);
+        let ip2: IPoint64 = result.ip
+        crossingLoc = result.loc
+
         this.add(ip2);
         this.add(ip);
       } else {
