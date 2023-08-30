@@ -10,7 +10,7 @@
 *******************************************************************************/
 
 import { Clipper } from "./clipper";
-import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathD, PathType, Paths64, Point64, Rect64 } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathType, Paths64, Point64, Rect64 } from "./core";
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Engine.cs
@@ -685,7 +685,7 @@ export class ClipperBase {
   }
 
   protected addPath(path: Path64, polytype: PathType, isOpen = false): void {
-    const tmp: Paths64 = [path]; // Assuming Paths64 is an array, as new Paths64(1) suggests it's a collection with a size.
+    const tmp: Paths64 = [path]; 
     this.addPaths(tmp, polytype, isOpen);
   }
 
@@ -1472,7 +1472,7 @@ export class ClipperBase {
     this.reset();
     let y = this.popScanline()
     while (this._succeeded) {
-      this.insertLocalMinimaIntoAEL(y);
+      if (y) this.insertLocalMinimaIntoAEL(y);
       let ae: Active | undefined;
       while (ae = this.popHorz()) { if (ae) this.doHorizontal(ae) }
       if (this._horzSegList.length > 0) {
@@ -2033,7 +2033,7 @@ export class ClipperBase {
 
   private static updateHorzSegment(hs: HorzSegment): boolean {
     const op = hs.leftOp;
-    const outrec = this.getRealOutRec(op.outrec)!;  // Assuming `getRealOutRec` is a method in your code
+    const outrec = this.getRealOutRec(op.outrec)!;  
     const outrecHasEdges = outrec.frontEdge !== undefined;
     const curr_y = op.pt.y;
     let opP = op, opN = op;
@@ -2219,7 +2219,7 @@ export class ClipperBase {
     } while (op !== op1 && Math.abs(outside_cnt) < 2);
     if (Math.abs(outside_cnt) > 1) return (outside_cnt < 0);
 
-    const mp = ClipperBase.getBounds(this.getCleanPath(op1)).midPoint();
+    const mp = ClipperBase.getBoundsPath(this.getCleanPath(op1)).midPoint();
     const path2 = this.getCleanPath(op2);
     return InternalClipper.pointInPolygon(mp, path2) !== PointInPolygonResult.IsOutside;
   }
@@ -2354,7 +2354,7 @@ export class ClipperBase {
     let nextNextOp: OutPt = splitOp.next!.next!;
     outrec.pts = prevOp;
 
-    let ip: Point64 = InternalClipper.getIntersectPoint(
+    let ip: IPoint64 = InternalClipper.getIntersectPoint(
       prevOp.pt, splitOp.pt, splitOp.next!.pt, nextNextOp.pt).ip;
 
     let area1: number = ClipperBase.area(prevOp);
@@ -2479,7 +2479,7 @@ export class ClipperBase {
     return true;
   }
 
-  private static getBounds(path: Path64): Rect64 {
+  private static getBoundsPath(path: Path64): Rect64 {
     if (path.length === 0) return new Rect64();
     let result = Clipper.InvalidRect64;
     for (let pt of path) {
@@ -2497,7 +2497,7 @@ export class ClipperBase {
     this.cleanCollinear(outrec);
     if (outrec.pts === undefined || !ClipperBase.buildPath(outrec.pts, this.reverseSolution, false, outrec.path))
       return false;
-    outrec.bounds = this.getBounds(outrec.path);
+    outrec.bounds = ClipperBase.getBoundsPath(outrec.path);
     return true;
   }
 
@@ -2595,15 +2595,15 @@ export class Clipper64 extends ClipperBase {
     super.addPaths(paths, polytype, isOpen);
   }
 
-  override addSubject(paths: Paths64): void {
+  addSubjectPaths(paths: Paths64): void {
     this.addPaths(paths, PathType.Subject);
   }
 
-  override addOpenSubject(paths: Paths64): void {
+  addOpenSubjectPaths(paths: Paths64): void {
     this.addPaths(paths, PathType.Subject, true);
   }
 
-  override addClip(paths: Paths64): void {
+  addClipPaths(paths: Paths64): void {
     this.addPaths(paths, PathType.Clip);
   }
 
@@ -2622,57 +2622,27 @@ export class Clipper64 extends ClipperBase {
   }
 
 
-  //execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64, openPaths: Paths64): boolean {
-  //  polytree.clear();
-  //  openPaths.length = 0
-  //  this._using_polytree = true;
-  //  try {
-  //    this.executeInternal(clipType, fillRule);
-  //    this.buildTree(polytree, openPaths);
-  //  } catch (error) {
-  //    this._succeeded = false;
-  //  }
-
-  //  this.clearSolutionOnly();
-  //  return this._succeeded;
-  //}
-
-  //execute(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64): boolean {
-  //  return this.execute(clipType, fillRule, polytree, new Paths64());
-  //}
-}
-
-class NodeEnumerator implements Iterator<PolyPathBase> {
-  private position = -1;
-  private readonly _nodes: PolyPathBase[];
-
-  constructor(nodes: PolyPathBase[]) {
-    this._nodes = [...nodes];
-  }
-
-  next(): IteratorResult<PolyPathBase> {
-    this.position++;
-    if (this.position < this._nodes.length) {
-      return {
-        done: false,
-        value: this._nodes[this.position]
-      };
-    } else {
-      return {
-        done: true,
-        value: undefined
-      };
+  executePolyTree(clipType: ClipType, fillRule: FillRule, polytree: PolyTree64, openPaths = new Paths64()): boolean {
+    polytree.clear();
+    openPaths.length = 0
+    this._using_polytree = true;
+    try {
+      this.executeInternal(clipType, fillRule);
+      this.buildTree(polytree, openPaths);
+    } catch (error) {
+      this._succeeded = false;
     }
+
+    this.clearSolutionOnly();
+    return this._succeeded;
   }
+
 }
 
-export abstract class PolyPathBase implements Iterable<PolyPathBase> {
+export abstract class PolyPathBase {
   protected _parent?: PolyPathBase;
-  protected _childs: PolyPathBase[] = [];
-
-  [Symbol.iterator](): Iterator<PolyPathBase> {
-    return new NodeEnumerator(this._childs);
-  }
+  children: Array<PolyPathBase> = [];
+  public polygon?: Path64;
 
   get isHole(): boolean {
     return this.getIsHole();
@@ -2702,18 +2672,20 @@ export abstract class PolyPathBase implements Iterable<PolyPathBase> {
   }
 
   get count(): number {
-    return this._childs.length;
+    return this.children.length;
   }
 
   abstract addChild(p: Path64): PolyPathBase;
 
   clear(): void {
-    this._childs = [];
+    this.children.length = 0
   }
+
+  forEach = this.children.forEach
+
 } // end of PolyPathBase class
 
 export class PolyPath64 extends PolyPathBase {
-  public polygon?: Path64;
 
   constructor(parent?: PolyPathBase) {
     super(parent);
@@ -2722,27 +2694,27 @@ export class PolyPath64 extends PolyPathBase {
   addChild(p: Path64): PolyPathBase {
     const newChild = new PolyPath64(this);
     (newChild as PolyPath64).polygon = p;
-    this._childs.push(newChild);
+    this.children.push(newChild);
     return newChild;
   }
 
   get(index: number): PolyPath64 {
-    if (index < 0 || index >= this._childs.length) {
+    if (index < 0 || index >= this.children.length) {
       throw new Error("InvalidOperationException");
     }
-    return this._childs[index] as PolyPath64;
+    return this.children[index] as PolyPath64;
   }
 
   child(index: number): PolyPath64 {
-    if (index < 0 || index >= this._childs.length) {
+    if (index < 0 || index >= this.children.length) {
       throw new Error("InvalidOperationException");
     }
-    return this._childs[index] as PolyPath64;
+    return this.children[index] as PolyPath64;
   }
 
   area(): number {
     let result = this.polygon ? Clipper.area(this.polygon) : 0;
-    for (const polyPathBase of this._childs) {
+    for (const polyPathBase of this.children) {
       const child = polyPathBase as PolyPath64;
       result += child.area();
     }

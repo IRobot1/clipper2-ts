@@ -151,13 +151,14 @@ export class Point64 implements IPoint64 {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
       this.x = Math.round(xOrPt);
       this.y = Math.round(yOrScale);
-    } else {
+    } else  {
+      const pt = xOrPt as Point64
       if (yOrScale !== undefined) {
-        this.x = Math.round(xOrPt.x * yOrScale);
-        this.y = Math.round(xOrPt.y * yOrScale);
+        this.x = Math.round(pt.x * yOrScale);
+        this.y = Math.round(pt.y * yOrScale);
       } else {
-        this.x = xOrPt.x;
-        this.y = xOrPt.y;
+        this.x = pt.x;
+        this.y = pt.y;
       }
     //} else {
     //  const pt = xOrPt as Point64

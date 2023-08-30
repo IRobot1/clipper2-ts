@@ -15,7 +15,7 @@
 //
 
 import { Clipper } from "./clipper";
-import { FillRule, IPoint64, InternalClipper, Path64, Paths64, Point64, Rect64 } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, Path64, Paths64, Point64, Rect64 } from "./core";
 import { Clipper64, PolyTree64 } from "./engine";
 
 export enum JoinType {
@@ -108,7 +108,7 @@ export class ClipperOffset {
   private static Tolerance: number = 1.0E-12;
   private _groupList: Array<Group> = [];
   private _normals: Array<PointD> = [];
-  private _solution: Array<Array<Point64>> = [];
+  private _solution: Paths64 = [];
   private _groupDelta!: number; //*0.5 for open paths; *-1.0 for negative areas
   private _delta!: number;
   private _mitLimSqr!: number;
@@ -123,7 +123,7 @@ export class ClipperOffset {
   public PreserveCollinear: boolean;
   public ReverseSolution: boolean;
 
-  public DeltaCallback?: (path: Point64[], path_norms: PointD[], currPt: number, prevPt: number) => number;
+  public DeltaCallback?: (path: IPoint64[], path_norms: PointD[], currPt: number, prevPt: number) => number;
 
   constructor(miterLimit: number = 2.0, arcTolerance: number = 0.0,
     preserveCollinear: boolean = false, reverseSolution: boolean = false) {
@@ -144,7 +144,7 @@ export class ClipperOffset {
     this.addPaths(pp, joinType, endType);
   }
 
-  public addPaths(paths: Point64[][], joinType: JoinType, endType: EndType): void {
+  public addPaths(paths: Paths64, joinType: JoinType, endType: EndType): void {
     if (paths.length === 0) return;
     this._groupList.push(new Group(paths, joinType, endType));
   }
@@ -161,25 +161,30 @@ export class ClipperOffset {
       }
     } else {
       this._delta = delta;
-      this._mitLimSqr = (this.MiterLimit <= 1 ? 2.0 : 2.0 / Clipper.sqr(this.MiterLimit));
+      this._mitLimSqr = (this.MiterLimit <= 1 ? 2.0 : 2.0 / this.sqr(this.MiterLimit));
       for (let group of this._groupList) {
         this.doGroupOffset(group);
       }
     }
   }
 
-  public execute(delta: number, solution: Point64[][]): void {
+  private sqr(value: number): number {
+    return value * value;
+  }
+
+
+  public execute(delta: number, solution: Paths64): void {
     solution.length = 0;
     this.executeInternal(delta);
     if (this._groupList.length === 0) return;
 
     // clean up self-intersections ...
-    let c = new Clipper64({
-      PreserveCollinear: this.PreserveCollinear,
-      // the solution should retain the orientation of the input
-      ReverseSolution: this.ReverseSolution !== this._groupList[0].pathsReversed
-    });
-    c.addSubject(this._solution);
+    let c = new Clipper64()
+    c.preserveCollinear = this.PreserveCollinear
+    // the solution should retain the orientation of the input
+    c.reverseSolution = this.ReverseSolution !== this._groupList[0].pathsReversed
+
+    c.addSubjectPaths(this._solution);
     if (this._groupList[0].pathsReversed)
       c.execute(ClipType.Union, FillRule.Negative, solution);
     else
@@ -192,19 +197,19 @@ export class ClipperOffset {
     if (this._groupList.length === 0) return;
 
     // clean up self-intersections ...
-    let c = new Clipper64({
-      PreserveCollinear: this.PreserveCollinear,
-      // the solution should retain the orientation of the input
-      ReverseSolution: this.ReverseSolution !== this._groupList[0].pathsReversed
-    });
-    c.addSubject(this._solution);
+    let c = new Clipper64()
+    c.preserveCollinear = this.PreserveCollinear
+    // the solution should retain the orientation of the input
+    c.reverseSolution = this.ReverseSolution !== this._groupList[0].pathsReversed
+
+    c.addSubjectPaths(this._solution);
     if (this._groupList[0].pathsReversed)
-      c.execute(ClipType.Union, FillRule.Negative, polytree);
+      c.executePolyTree(ClipType.Union, FillRule.Negative, polytree);
     else
-      c.execute(ClipType.Union, FillRule.Positive, polytree);
+      c.executePolyTree(ClipType.Union, FillRule.Positive, polytree);
   }
 
-  protected static getUnitNormal(pt1: Point64, pt2: Point64): PointD {
+  protected static getUnitNormal(pt1: IPoint64, pt2: IPoint64): PointD {
     let dx = pt2.x - pt1.x;
     let dy = pt2.y - pt1.y;
     if (dx === 0 && dy === 0) return new PointD(0, 0);
@@ -216,15 +221,15 @@ export class ClipperOffset {
     return new PointD(dy, -dx);
   }
 
-  public execute(deltaCallback: (path: Point64[], path_norms: PointD[], currPt: number, prevPt: number) => number, solution: Point64[][]): void {
+  public executeCallback(deltaCallback: (path: IPoint64[], path_norms: PointD[], currPt: number, prevPt: number) => number, solution: Point64[][]): void {
     this.DeltaCallback = deltaCallback;
     this.execute(1.0, solution);
   }
 
-  private static getBoundsAndLowestPolyIdx(paths: Point64[][], index: number, rec: Rect64): void {
-    rec = new Rect64(false); // ie invalid rect
+  private static getBoundsAndLowestPolyIdx(paths: Paths64): { index: number, rec: Rect64 } {
+    let rec = new Rect64(false); // ie invalid rect
     let lpX: number = Number.MIN_SAFE_INTEGER;
-    index = -1;
+    let index = -1;
     for (let i = 0; i < paths.length; i++) {
       for (let pt of paths[i]) {
         if (pt.y >= rec.bottom) {
@@ -238,6 +243,7 @@ export class ClipperOffset {
         else if (pt.x < rec.left) rec.left = pt.x;
       }
     }
+    return { index, rec }
   }
 
   private static translatePoint(pt: PointD, dx: number, dy: number): PointD {
@@ -311,12 +317,12 @@ export class ClipperOffset {
 
     const absDelta = Math.abs(this._groupDelta);
     // now offset the original vertex delta units along unit vector
-    let ptQ = new PointD(path[j].x, path[j].y); // Assuming Path64 has X and Y as properties.
-    ptQ = this.translatePoint(ptQ, absDelta * vec.x, absDelta * vec.y);
+    let ptQ = new PointD(path[j].x, path[j].y); 
+    ptQ = ClipperOffset.translatePoint(ptQ, absDelta * vec.x, absDelta * vec.y);
 
     // get perpendicular vertices
-    const pt1 = this.translatePoint(ptQ, this._groupDelta * vec.y, this._groupDelta * -vec.x);
-    const pt2 = this.translatePoint(ptQ, this._groupDelta * -vec.y, this._groupDelta * vec.x);
+    const pt1 = ClipperOffset.translatePoint(ptQ, this._groupDelta * vec.y, this._groupDelta * -vec.x);
+    const pt2 = ClipperOffset.translatePoint(ptQ, this._groupDelta * -vec.y, this._groupDelta * vec.x);
     // get 2 vertices along one edge offset
     const pt3 = this.getPerpendicD(path[k], this._normals[k]);
 
@@ -324,14 +330,14 @@ export class ClipperOffset {
       const pt4 = new PointD(pt3.x + vec.x * this._groupDelta, pt3.y + vec.y * this._groupDelta);
       const pt = ClipperOffset.intersectPoint(pt1, pt2, pt3, pt4);
       //get the second intersect point through reflection
-      group.outPath.push(new Point64(this.reflectPoint(pt, ptQ).x, this.reflectPoint(pt, ptQ).y));
+      group.outPath.push(new Point64(ClipperOffset.reflectPoint(pt, ptQ).x, ClipperOffset.reflectPoint(pt, ptQ).y));
       group.outPath.push(new Point64(pt.x, pt.y));
     } else {
       const pt4 = this.getPerpendicD(path[j], this._normals[k]);
       const pt = ClipperOffset.intersectPoint(pt1, pt2, pt3, pt4);
       group.outPath.push(new Point64(pt.x, pt.y));
       //get the second intersect point through reflection
-      group.outPath.push(new Point64(this.reflectPoint(pt, ptQ).x, this.reflectPoint(pt, ptQ).y));
+      group.outPath.push(new Point64(ClipperOffset.reflectPoint(pt, ptQ).x, ClipperOffset.reflectPoint(pt, ptQ).y));
     }
   }
 
@@ -344,10 +350,10 @@ export class ClipperOffset {
   }
 
   private doRound(group: Group, path: Path64, j: number, k: number, angle: number): void {
-    if (typeof DeltaCallback !== "undefined") {
+    if (typeof this.DeltaCallback !== "undefined") {
       const absDelta = Math.abs(this._groupDelta);
-      const arcTol = ArcTolerance > 0.01
-        ? ArcTolerance
+      const arcTol = this.ArcTolerance > 0.01
+        ? this.ArcTolerance
         : Math.log10(2 + absDelta) * InternalClipper.defaultArcTolerance;
       const stepsPer360 = Math.PI / Math.acos(1 - arcTol / absDelta);
       this._stepSin = Math.sin((2 * Math.PI) / stepsPer360);
@@ -379,23 +385,31 @@ export class ClipperOffset {
     this._normals.length = cnt;
 
     for (let i = 0; i < cnt - 1; i++) {
-      this._normals.push(this.getUnitNormal(path[i], path[i + 1]));
+      this._normals.push(ClipperOffset.getUnitNormal(path[i], path[i + 1]));
     }
-    this._normals.push(this.getUnitNormal(path[cnt - 1], path[0]));
+    this._normals.push(ClipperOffset.getUnitNormal(path[cnt - 1], path[0]));
+  }
+
+  crossProduct(vec1: PointD, vec2: PointD): number {
+    return (vec1.y * vec2.x - vec2.y * vec1.x);
+  }
+
+  dotProduct(vec1: PointD, vec2: PointD): number {
+    return (vec1.x * vec2.x + vec1.y * vec2.y);
   }
 
   private offsetPoint(group: Group, path: Path64, j: number, k: number): void {
-    const sinA = InternalClipper.crossProduct(this._normals[j], this._normals[k]);
-    let cosA = InternalClipper.dotProduct(this._normals[j], this._normals[k]);
+    const sinA = this.crossProduct(this._normals[j], this._normals[k]);
+    let cosA = this.dotProduct(this._normals[j], this._normals[k]);
     if (sinA > 1.0) cosA = 1.0;
     else if (sinA < -1.0) cosA = -1.0;
 
-    if (typeof DeltaCallback !== "undefined") {
-      this._groupDelta = DeltaCallback(path, this._normals, j, k);
+    if (typeof this.DeltaCallback !== "undefined") {
+      this._groupDelta = this.DeltaCallback(path, this._normals, j, k);
       if (group.pathsReversed) this._groupDelta = -this._groupDelta;
     }
 
-    if (Math.abs(this._groupDelta) < Tolerance) {
+    if (Math.abs(this._groupDelta) < ClipperOffset.Tolerance) {
       group.outPath.push(path[j]);
       return;
     }
@@ -448,11 +462,11 @@ export class ClipperOffset {
     group.outPath = [];
     const highI = path.length - 1;
 
-    if (typeof DeltaCallback !== "undefined") {
-      this._groupDelta = DeltaCallback(path, this._normals, 0, 0);
+    if (typeof this.DeltaCallback !== "undefined") {
+      this._groupDelta = this.DeltaCallback(path, this._normals, 0, 0);
     }
 
-    if (Math.abs(this._groupDelta) < Tolerance) {
+    if (Math.abs(this._groupDelta) < ClipperOffset.Tolerance) {
       group.outPath.push(path[0]);
     } else {
       switch (this._endType) {
@@ -481,11 +495,11 @@ export class ClipperOffset {
     }
     this._normals[0] = this._normals[highI];
 
-    if (typeof DeltaCallback !== "undefined") {
-      this._groupDelta = DeltaCallback(path, this._normals, highI, highI);
+    if (typeof this.DeltaCallback !== "undefined") {
+      this._groupDelta = this.DeltaCallback(path, this._normals, highI, highI);
     }
 
-    if (Math.abs(this._groupDelta) < Tolerance) {
+    if (Math.abs(this._groupDelta) < ClipperOffset.Tolerance) {
       group.outPath.push(path[highI]);
     } else {
       switch (this._endType) {
@@ -514,15 +528,12 @@ export class ClipperOffset {
 
   private doGroupOffset(group: Group): void {
     if (group.endType == EndType.Polygon) {
-      let lowestIdx: number;
-      let grpBounds: Rect64;
 
-      // Assuming the method `GetBoundsAndLowestPolyIdx` exists in your TypeScript environment
-      [lowestIdx, grpBounds] = this.getBoundsAndLowestPolyIdx(group.inPaths);
+      let { index } = ClipperOffset.getBoundsAndLowestPolyIdx(group.inPaths);
 
-      if (lowestIdx < 0) return;
+      if (index < 0) return;
 
-      const area = Clipper.area(group.inPaths[lowestIdx]);
+      const area = Clipper.area(group.inPaths[index]);
       group.pathsReversed = area < 0;
 
       if (group.pathsReversed) {
@@ -539,10 +550,10 @@ export class ClipperOffset {
     this._joinType = group.joinType;
     this._endType = group.endType;
 
-    if (!DeltaCallback &&
+    if (!this.DeltaCallback &&
       (group.joinType == JoinType.Round || group.endType == EndType.Round)) {
-      const arcTol = ArcTolerance > 0.01
-        ? ArcTolerance
+      const arcTol = this.ArcTolerance > 0.01
+        ? this.ArcTolerance
         : Math.log10(2 + absDelta) * InternalClipper.defaultArcTolerance;
 
       const stepsPer360 = Math.PI / Math.acos(1 - arcTol / absDelta);

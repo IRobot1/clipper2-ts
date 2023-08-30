@@ -359,7 +359,7 @@ export class RectClip64 {
           else if (path[i].Y > this.rect.bottom) loc = Location.bottom;
           else if (path[i].Y < this.rect.top) loc = Location.top;
           else {
-            this.add(path[i]);  // Assuming a similar method 'add' exists in TypeScript
+            this.add(path[i]);  
             i++;
             continue;
           }
@@ -412,7 +412,7 @@ export class RectClip64 {
 
       if (!result.success) {
         if (prevCrossLoc == Location.inside) {
-          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp); // Assuming mp_ exists and is defined
+          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp); 
           do {
             startLocs.push(prev);
             prev = RectClip64.getAdjacentLocation(prev, isClockw);
@@ -499,13 +499,13 @@ export class RectClip64 {
     }
   }
 
-  public execute(paths: Array<any>): Array<any> { // Paths64 assumed to be an array
-    let result: Array<any> = []; // Paths64 assumed to be an array
+  public execute(paths: Array<any>): Array<any> { 
+    let result: Array<any> = []; 
     if (this.rect.isEmpty()) return result;
 
     for (const path of paths) {
       if (path.length < 3) continue;
-      this.pathBounds = Clipper.getBounds(path); // assuming Clipper is a static class available in the environment
+      this.pathBounds = Clipper.getBounds(path);
 
       if (!this.rect.intersects(this.pathBounds)) continue;
       else if (this.rect.containsRect(this.pathBounds)) {
@@ -518,13 +518,13 @@ export class RectClip64 {
         this.tidyEdgePair(i, this.edges[i * 2], this.edges[i * 2 + 1]);
 
       for (const op of this.results) {
-        let tmp = this.getPath(op); // assuming getPath returns an array
+        let tmp = this.getPath(op); 
         if (tmp.length > 0) result.push(tmp);
       }
 
-      this.results.splice(0, this.results.length); // equivalent to Clear()
+      this.results.length = 0
       for (let i = 0; i < 8; i++)
-        this.edges[i].splice(0, this.edges[i].length); // equivalent to Clear()
+        this.edges[i].length = 0
     }
     return result;
   }
@@ -537,7 +537,7 @@ export class RectClip64 {
       if (op === undefined) continue;
 
       do {
-        if (InternalClipper.crossProduct(op2!.prev!.pt, op2!.pt, op2!.next!.pt) === 0) { // assuming InternalClipper is a static class available in the environment
+        if (InternalClipper.crossProduct(op2!.prev!.pt, op2!.pt, op2!.next!.pt) === 0) { 
           if (op2 === op) {
             op2 = RectClip64.unlinkOpBack(op2);
             if (op2 === undefined) break;
@@ -713,7 +713,7 @@ export class RectClip64 {
     }
   }
 
-  private getPath(op: OutPt2 | undefined): Path64 {
+  protected getPath(op: OutPt2 | undefined): Path64 {
     let result = new Path64();
     if (!op || op.prev === op.next) return result;
 
@@ -748,13 +748,12 @@ export class RectClipLines64 extends RectClip64 {
 
   public override execute(paths: Paths64): Paths64 {
     const result = new Paths64();
-    if (this.rect.isEmpty()) return result; // Assuming isEmpty is a method on the Rect64 type
+    if (this.rect.isEmpty()) return result; 
     for (let path of paths) {
       if (path.length < 2) continue;
       this.pathBounds = Clipper.getBounds(path);
-      if (!this.rect.intersects(this.pathBounds)) continue; // Assuming intersects is a method on the Rect64 type
+      if (!this.rect.intersects(this.pathBounds)) continue; 
 
-      // You need to implement the ExecuteInternal method or provide its definition.
       this.executeInternal(path);
 
       for (let op of this.results) {
@@ -771,7 +770,7 @@ export class RectClipLines64 extends RectClip64 {
     return result;
   }
 
-  private override getPath(op: OutPt2 | undefined): Path64 {
+  protected override getPath(op: OutPt2 | undefined): Path64 {
     const result = new Path64();
     if (!op || op === op.next) return result;
     op = op.next; // starting at path beginning 
@@ -784,9 +783,9 @@ export class RectClipLines64 extends RectClip64 {
     return result;
   }
 
-  private override  executeInternal(path: Path64): void {
+  protected override  executeInternal(path: Path64): void {
     this.results = [];
-    if (path.length < 2 || this.rect.isEmpty()) return; // Assuming `isEmpty` is a method on the rect_ type.
+    if (path.length < 2 || this.rect.isEmpty()) return; 
 
     let prev: Location = Location.inside;
     let i = 1;

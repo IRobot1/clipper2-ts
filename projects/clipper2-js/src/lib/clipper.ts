@@ -19,7 +19,7 @@
 //
 
 import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathType, Paths64, Point64, Rect64 } from "./core";
-import { Clipper64, PointInPolygonResult, PolyPath64, PolyTree64 } from "./engine";
+import { Clipper64, PointInPolygonResult, PolyPath64, PolyPathBase, PolyTree64 } from "./engine";
 import { Minkowski } from "./minkowski";
 import { ClipperOffset, EndType, JoinType } from "./offset";
 import { RectClip64, RectClipLines64 } from "./rectclip";
@@ -75,7 +75,7 @@ export class Clipper {
     return solution;
   }
 
-  public static RectClip(rect: Rect64, paths: Paths64): Paths64 {
+  public static RectClipPaths(rect: Rect64, paths: Paths64): Paths64 {
     if (rect.isEmpty() || paths.length === 0) return new Paths64();
     const rc = new RectClip64(rect);
     return rc.execute(paths);
@@ -85,10 +85,10 @@ export class Clipper {
     if (rect.isEmpty() || path.length === 0) return new Paths64();
     const tmp: Paths64 = new Paths64();
     tmp.push(path);
-    return this.RectClip(rect, tmp);
+    return this.RectClipPaths(rect, tmp);
   }
 
-  public static RectClipLines(rect: Rect64, paths: Paths64): Paths64 {
+  public static RectClipLinesPaths(rect: Rect64, paths: Paths64): Paths64 {
     if (rect.isEmpty() || paths.length === 0) return new Paths64();
     const rc = new RectClipLines64(rect);
     return rc.execute(paths);
@@ -98,7 +98,7 @@ export class Clipper {
     if (rect.isEmpty() || path.length === 0) return new Paths64();
     const tmp: Paths64 = new Paths64();
     tmp.push(path);
-    return this.RectClipLines(rect, tmp);
+    return this.RectClipLinesPaths(rect, tmp);
   }
 
   public static MinkowskiSum(pattern: Path64, path: Path64, isClosed: boolean): Paths64 {
@@ -122,7 +122,7 @@ export class Clipper {
     return a * 0.5;
   }
 
-  public static area(paths: Paths64): number {
+  public static areaPaths(paths: Paths64): number {
     let a = 0.0;
     for (let path of paths)
       a += this.area(path);
@@ -214,10 +214,10 @@ export class Clipper {
       if (pt.y < result.top) result.top = pt.y;
       if (pt.y > result.bottom) result.bottom = pt.y;
     }
-    return result.left === Number.MAX_SAFE_INTEGER ? { left: 0, right: 0, top: 0, bottom: 0 } : result;
+    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64( 0, 0, 0, 0 ) : result;
   }
 
-  public static getBounds(paths: Paths64): Rect64 {
+  public static getBoundsPaths(paths: Paths64): Rect64 {
     const result: Rect64 = Clipper.InvalidRect64;
     for (const path of paths) {
       for (const pt of path) {
@@ -227,7 +227,7 @@ export class Clipper {
         if (pt.y > result.bottom) result.bottom = pt.y;
       }
     }
-    return result.left === Number.MAX_SAFE_INTEGER ? { left: 0, right: 0, top: 0, bottom: 0 } : result;
+    return result.left === Number.MAX_SAFE_INTEGER ? new Rect64( 0, 0, 0, 0 ) : result;
   }
 
   static makePath(arr: number[]): Path64 {
@@ -238,13 +238,13 @@ export class Clipper {
     return p;
   }
 
-  static makePath(arr: bigint[]): Path64 {
-    let len = arr.length / 2;
-    let p = new Path64(len);
-    for (let i = 0; i < len; i++)
-      p.push(new Point64(Number(arr[i * 2]), Number(arr[i * 2 + 1])));
-    return p;
-  }
+  //static makePath(arr: bigint[]): Path64 {
+  //  let len = arr.length / 2;
+  //  let p = new Path64(len);
+  //  for (let i = 0; i < len; i++)
+  //    p.push(new Point64(Number(arr[i * 2]), Number(arr[i * 2 + 1])));
+  //  return p;
+  //}
 
   static stripDuplicates(path: Path64, isClosedPath: boolean): Path64 {
     let cnt = path.length;
@@ -262,17 +262,17 @@ export class Clipper {
     return result;
   }
 
-  private static addPolyNodeToPaths(polyPath: PolyPath64, paths: Paths64): void {
-    if (polyPath.Polygon && polyPath.Polygon.length > 0)
-      paths.push(polyPath.Polygon);
-    for (let i = 0; i < polyPath.Count; i++)
-      this.addPolyNodeToPaths(polyPath._childs[i], paths);
+  private static addPolyNodeToPaths(polyPath: PolyPathBase, paths: Paths64): void {
+    if (polyPath.polygon && polyPath.polygon.length > 0)
+      paths.push(polyPath.polygon);
+    for (let i = 0; i < polyPath.count; i++)
+      this.addPolyNodeToPaths(polyPath.children[i], paths);
   }
 
   public static polyTreeToPaths64(polyTree: PolyTree64): Paths64 {
     const result: Paths64 = new Paths64();
     for (let i = 0; i < polyTree.count; i++) {
-      addPolyNodeToPaths(polyTree._childs[i] as PolyPath64, result);
+      Clipper.addPolyNodeToPaths(polyTree.children[i] as PolyPath64, result);
     }
     return result;
   }
@@ -303,8 +303,8 @@ export class Clipper {
     if (max_d <= epsSqrd) return;
 
     flags[idx] = true;
-    if (idx > begin + 1) rdp(path, begin, idx, epsSqrd, flags);
-    if (idx < end - 1) rdp(path, idx, end, epsSqrd, flags);
+    if (idx > begin + 1) Clipper.rdp(path, begin, idx, epsSqrd, flags);
+    if (idx < end - 1) Clipper.rdp(path, idx, end, epsSqrd, flags);
   }
 
   public static ramerDouglasPeucker(path: Path64, epsilon: number): Path64 {
@@ -314,7 +314,7 @@ export class Clipper {
     const flags = new Array<boolean>(len).fill(false);
     flags[0] = true;
     flags[len - 1] = true;
-    rdp(path, 0, len - 1, sqr(epsilon), flags);
+    Clipper.rdp(path, 0, len - 1, Clipper.sqr(epsilon), flags);
 
     const result: Path64 = [];
     for (let i = 0; i < len; i++) {
@@ -323,10 +323,10 @@ export class Clipper {
     return result;
   }
 
-  public static ramerDouglasPeucker(paths: Paths64, epsilon: number): Paths64 {
+  public static ramerDouglasPeuckerPaths(paths: Paths64, epsilon: number): Paths64 {
     const result: Paths64 = [];
     for (const path of paths) {
-      result.push(ramerDouglasPeucker(path, epsilon));
+      result.push(Clipper.ramerDouglasPeucker(path, epsilon));
     }
     return result;
   }
@@ -503,13 +503,13 @@ export class Clipper {
     return result;
   }
 
-  private static showPolyPathStructure(pp: PolyPath64, level: number): void {
+  private static showPolyPathStructure(pp: PolyPathBase, level: number): void {
     let spaces = ' '.repeat(level * 2);
     let caption = pp.isHole ? "Hole " : "Outer ";
-    if (pp.length === 0) {
+    if (pp.count === 0) {
       console.log(spaces + caption);
     } else {
-      console.log(spaces + caption + `(${pp.length})`);
+      console.log(spaces + caption + `(${pp.count})`);
       pp.forEach(child => this.showPolyPathStructure(child, level + 1));
     }
   }

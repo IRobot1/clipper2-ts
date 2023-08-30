@@ -15,18 +15,18 @@
 //
 
 import { Clipper } from "./clipper";
-import { FillRule, Point64 } from "./core";
+import { FillRule, IPoint64, Path64, Paths64, Point64 } from "./core";
 
 
 export class Minkowski {
-  private static minkowskiInternal(pattern: Point64[], path: Point64[], isSum: boolean, isClosed: boolean): Point64[][] {
+  private static minkowskiInternal(pattern: Path64, path: Path64, isSum: boolean, isClosed: boolean): Paths64 {
     let delta = isClosed ? 0 : 1;
     let patLen = pattern.length;
     let pathLen = path.length;
-    let tmp: Point64[][] = new Array(pathLen);
+    let tmp: IPoint64[][] = new Array(pathLen);
 
     for (let pathPt of path) {
-      let path2: Point64[] = new Array(patLen);
+      let path2: IPoint64[] = new Array(patLen);
       if (isSum) {
         for (let basePt of pattern)
           path2.push({ x: pathPt.x + basePt.x, y: pathPt.y + basePt.y });
@@ -37,13 +37,13 @@ export class Minkowski {
       tmp.push(path2);
     }
 
-    let result: Point64[][] = new Array((pathLen - delta) * patLen);
+    let result: IPoint64[][] = new Array((pathLen - delta) * patLen);
     let g = isClosed ? pathLen - 1 : 0;
 
     let h = patLen - 1;
     for (let i = delta; i < pathLen; i++) {
       for (let j = 0; j < patLen; j++) {
-        let quad: Point64[] = [tmp[g][h], tmp[i][h], tmp[i][j], tmp[g][j]];
+        let quad: Path64 = [tmp[g][h], tmp[i][h], tmp[i][j], tmp[g][j]];
         if (!Clipper.isPositive(quad))
           result.push(Clipper.reversePath(quad));
         else
@@ -55,12 +55,12 @@ export class Minkowski {
     return result;
   }
 
-  public static sum(pattern: Point64[], path: Point64[], isClosed: boolean): Point64[][] {
-    return Clipper.Union(this.minkowskiInternal(pattern, path, true, isClosed), FillRule.NonZero);
+  public static sum(pattern: Path64, path: Path64, isClosed: boolean): Paths64 {
+    return Clipper.Union(this.minkowskiInternal(pattern, path, true, isClosed), undefined, FillRule.NonZero);
   }
 
-  public static diff(pattern: Point64[], path: Point64[], isClosed: boolean): Point64[][] {
-    return Clipper.Union(this.minkowskiInternal(pattern, path, false, isClosed), FillRule.NonZero);
+  public static diff(pattern: Path64, path: Path64, isClosed: boolean): Paths64 {
+    return Clipper.Union(this.minkowskiInternal(pattern, path, false, isClosed), undefined, FillRule.NonZero);
   }
 
 }
