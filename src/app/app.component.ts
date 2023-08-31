@@ -1,16 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { Clipper, Clipper64, Path64, Paths64 } from 'clipper2-js';
 import { ClipperParse } from '../../projects/clipper2-js/tests/clipperparse';
+import { ThreeJSApp } from './threejs-app';
+import { ClipperExample } from './clipper-example';
 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'clipper2-ts';
 
-  ngOnInit(): void {
+  constructor() {
+    const app = new ThreeJSApp()
+
+    app.router.add('/', () => { return new ClipperExample(app) })
+
+  }
+  xngOnInit(): void {
     const testcases = ClipperParse.testCases(lines.split('\n'))
 
     testcases.forEach(testcase => {

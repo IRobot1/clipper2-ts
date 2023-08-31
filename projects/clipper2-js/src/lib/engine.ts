@@ -231,13 +231,18 @@ export class ClipperEngine {
       if (!isOpen && prev_v.next === prev_v) continue;
 
       // OK, we have a valid path
-      let going_up: boolean;
+      let going_up = false
       let going_up0: boolean;
 
       if (isOpen) {
         curr_v = v0!.next;
+        let count = 0
         while (curr_v !== v0 && curr_v!.pt.y === v0!.pt.y) {
           curr_v = curr_v!.next;
+          if (count++ > totalVertCnt) {
+            console.warn('infinite loop detected')
+            break;
+          }
         }
         going_up = curr_v!.pt.y <= v0!.pt.y;
         if (going_up) {
@@ -248,8 +253,14 @@ export class ClipperEngine {
         }
       } else { // closed path
         prev_v = v0!.prev;
+        let count = 0
         while (prev_v !== v0 && prev_v!.pt.y === v0!.pt.y) {
           prev_v = prev_v!.prev;
+
+          if (count++ > totalVertCnt) {
+            console.warn('infinite loop detected')
+            break;
+          }
         }
         if (prev_v === v0) {
           continue; // only open paths can be completely flat
@@ -261,6 +272,7 @@ export class ClipperEngine {
       prev_v = v0;
       curr_v = v0!.next;
 
+      let count = 0
       while (curr_v !== v0) {
         if (curr_v!.pt.y > prev_v!.pt.y && going_up) {
           prev_v!.flags |= VertexFlags.LocalMax;
@@ -271,6 +283,12 @@ export class ClipperEngine {
         }
         prev_v = curr_v;
         curr_v = curr_v!.next;
+
+        if (count++ > totalVertCnt) {
+          console.warn('infinite loop detected')
+          break;
+        }
+
       }
 
       if (isOpen) {
