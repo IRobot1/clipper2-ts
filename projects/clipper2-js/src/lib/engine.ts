@@ -84,12 +84,6 @@ class IntersectNode {
   }
 }
 
-class LocMinSorter {
-  compare(locMin1: LocalMinima, locMin2: LocalMinima): number {
-    return locMin2.vertex.pt.y - locMin1.vertex.pt.y;
-  }
-}
-
 class OutPt {
   pt: IPoint64;
   next: OutPt | undefined;
@@ -134,18 +128,6 @@ export class OutRec {
   constructor(idx: number) {
     this.idx = idx
     this.isOpen = false
-  }
-}
-
-class HorzSegSorter {
-  compare(hs1: HorzSegment | undefined, hs2: HorzSegment | undefined): number {
-    if (!hs1 || !hs2) return 0;
-    if (!hs1.rightOp) {
-      return !hs2.rightOp ? 0 : 1;
-    } else if (!hs2.rightOp)
-      return -1;
-    else
-      return hs1.leftOp!.pt.x - hs2.leftOp!.pt.x;
   }
 }
 
@@ -328,6 +310,51 @@ export class ReuseableDataContainer64 {
   }
 }
 
+class SimpleNavigableSet {
+  items: Array<number> = []
+
+  constructor() {
+    this.items = [];
+  }
+
+  clear(): void { this.items.length = 0 }
+  isEmpty(): boolean { return this.items.length == 0 }
+
+  pollLast(): number | undefined {
+    return this.items.pop();
+  }
+
+  add(item: number) {
+    if (!this.items.includes(item)) {
+      this.items.push(item);
+      this.items.sort((a, b) => a - b);
+    }
+    //let index = this.binarySearch(item);
+    //if (index < 0) {
+    //  this.items.splice(-(index + 1), 0, item);
+    //}
+  }
+
+  //binarySearch(target: number) {
+  //  let low = 0;
+  //  let high = this.items.length - 1;
+
+  //  while (low <= high) {
+  //    let mid = Math.floor((low + high) / 2);
+  //    if (this.items[mid] === target) {
+  //      return mid;
+  //    } else if (this.items[mid] < target) {
+  //      low = mid + 1;
+  //    } else {
+  //      high = mid - 1;
+  //    }
+  //  }
+
+  //  // If not found, return a negative number that indicates where the item should be inserted.
+  //  return -(low + 1);
+  //}
+}
+
 export class ClipperBase {
   private _cliptype: ClipType = ClipType.None
   private _fillrule: FillRule = FillRule.EvenOdd
@@ -337,7 +364,7 @@ export class ClipperBase {
   private readonly _intersectList: IntersectNode[];
   private readonly _vertexList: Vertex[];
   private readonly _outrecList: OutRec[];
-  private readonly _scanlineList: number[];
+  private readonly _scanlineList: SimpleNavigableSet;
   private readonly _horzSegList: HorzSegment[];
   private readonly _horzJoinList: HorzJoin[];
   private _currentLocMin: number = 0
@@ -354,7 +381,7 @@ export class ClipperBase {
     this._intersectList = [];
     this._vertexList = [];
     this._outrecList = [];
-    this._scanlineList = [];
+    this._scanlineList = new SimpleNavigableSet()
     this._horzSegList = [];
     this._horzJoinList = [];
     this.preserveCollinear = true;
@@ -601,7 +628,7 @@ export class ClipperBase {
 
   protected clearSolutionOnly(): void {
     while (this._actives !== undefined) this.deleteFromAEL(this._actives);
-    this._scanlineList.length = 0
+    this._scanlineList.clear()
     this.disposeIntersectNodes();
     this._outrecList.length = 0
     this._horzSegList.length = 0
@@ -619,8 +646,12 @@ export class ClipperBase {
 
   protected reset(): void {
     if (!this._isSortedMinimaList) {
-      this._minimaList.sort(/* need to pass the comparator function here, it was not provided in the original code */);
+      this._minimaList.sort((locMin1, locMin2) => locMin2.vertex.pt.y - locMin1.vertex.pt.y);
       this._isSortedMinimaList = true;
+    }
+
+    for (let i = this._minimaList.length - 1; i >= 0; i--) {
+      this._scanlineList.add(this._minimaList[i].vertex.pt.y);
     }
 
     this._currentBotY = 0;
@@ -631,27 +662,11 @@ export class ClipperBase {
   }
 
   private insertScanline(y: number): void {
-
-    //const index = this._scanlineList.indexOf(y); // This might not work exactly as intended
-    //if (index >= 0) return;
-    // index = ~index; // Need to review this in the context of the function
-    //this._scanlineList.splice(index, 0, y);
-    this._scanlineList.push(y)
+    this._scanlineList.add(y)
   }
 
   private popScanline(): number | undefined {
-    return this._scanlineList.pop()
-    //  const cnt = this._scanlineList.length - 1;
-    //  if (cnt < 0) {
-    //    return undefined;
-    //  }
-
-    //  const y = this._scanlineList[cnt];
-    //  this._scanlineList.splice(cnt, 1);
-    //  while (cnt >= 0 && y === this._scanlineList[cnt]) {
-    //    this._scanlineList.splice(cnt, 1);
-    //  }
-    //  return y;
+    return this._scanlineList.pollLast();
   }
 
   private hasLocMinAtY(y: number): boolean {
@@ -685,7 +700,7 @@ export class ClipperBase {
   }
 
   protected addPath(path: Path64, polytype: PathType, isOpen = false): void {
-    const tmp: Paths64 = [path]; 
+    const tmp: Paths64 = [path];
     this.addPaths(tmp, polytype, isOpen);
   }
 
@@ -1470,21 +1485,35 @@ export class ClipperBase {
     this._fillrule = fillRule;
     this._cliptype = ct;
     this.reset();
+
     let y = this.popScanline()
+    if (!y) return
+
     while (this._succeeded) {
-      if (y) this.insertLocalMinimaIntoAEL(y);
-      let ae: Active | undefined;
-      while (ae = this.popHorz()) { if (ae) this.doHorizontal(ae) }
+      this.insertLocalMinimaIntoAEL(y)
+      let ae = this.popHorz()
+      while (ae) {
+        this.doHorizontal(ae)
+        ae = this.popHorz()
+      }
+
       if (this._horzSegList.length > 0) {
         this.convertHorzSegsToJoins();
         this._horzSegList.length = 0
       }
-      if (y) this._currentBotY = y;  // bottom of scanbeam
+      this._currentBotY = y;  // bottom of scanbeam
+
       y = this.popScanline()
       if (!y) break;  // y new top of scanbeam
+
       this.doIntersections(y);
       this.doTopOfScanbeam(y);
-      while (ae = this.popHorz()) { if (ae) this.doHorizontal(ae) }
+
+      ae = this.popHorz()
+      while (ae) {
+        this.doHorizontal(ae)
+        ae = this.popHorz()
+      }
     }
     if (this._succeeded) this.processHorzJoins();
   }
@@ -2033,7 +2062,7 @@ export class ClipperBase {
 
   private static updateHorzSegment(hs: HorzSegment): boolean {
     const op = hs.leftOp;
-    const outrec = this.getRealOutRec(op.outrec)!;  
+    const outrec = this.getRealOutRec(op.outrec)!;
     const outrecHasEdges = outrec.frontEdge !== undefined;
     const curr_y = op.pt.y;
     let opP = op, opN = op;
@@ -2083,7 +2112,15 @@ export class ClipperBase {
       if (ClipperBase.updateHorzSegment(hs)) k++;
     }
     if (k < 2) return;
-    this._horzSegList.sort((a, b) => new HorzSegSorter().compare(a, b));
+    this._horzSegList.sort((hs1, hs2) => {
+      if (!hs1 || !hs2) return 0;
+      if (!hs1.rightOp) {
+        return !hs2.rightOp ? 0 : 1;
+      } else if (!hs2.rightOp)
+        return -1;
+      else
+        return hs1.leftOp!.pt.x - hs2.leftOp!.pt.x;
+    });
 
     for (let i = 0; i < k - 1; i++) {
       const hs1 = this._horzSegList[i];
@@ -2458,8 +2495,6 @@ export class ClipperBase {
   protected buildPaths(solutionClosed: Paths64, solutionOpen: Paths64): boolean {
     solutionClosed.length = 0
     solutionOpen.length = 0
-    //solutionClosed.capacity = this._outrecList.length;
-    //solutionOpen.capacity = this._outrecList.length;
 
     let i = 0;
     while (i < this._outrecList.length) {
@@ -2468,12 +2503,16 @@ export class ClipperBase {
 
       let path = new Path64();
       if (outrec.isOpen) {
-        if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, true, path))
+        if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, true, path)) {
           solutionOpen.push(path);
+        }
       } else {
         this.cleanCollinear(outrec);
-        if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, false, path))
+        // closed paths should always return a Positive orientation
+        // except when reverseSolution == true
+        if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, false, path)) {
           solutionClosed.push(path);
+        }
       }
     }
     return true;

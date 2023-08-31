@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Clipper, Clipper64, Path64, Paths64 } from 'clipper2-js';
 import { ClipperParse } from '../../projects/clipper2-js/tests/clipperparse';
 
@@ -7,10 +7,10 @@ import { ClipperParse } from '../../projects/clipper2-js/tests/clipperparse';
   selector: 'app-root',
   templateUrl: './app.component.html'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'clipper2-ts';
 
-  constructor() {
+  ngOnInit(): void {
     const testcases = ClipperParse.testCases(lines.split('\n'))
 
     testcases.forEach(testcase => {
@@ -30,17 +30,13 @@ export class AppComponent {
         const area2 = Clipper.areaPaths(solution);
         const a = testcase.area / area2;
 
-        if (a > 0.995 && a < 1.005)
-          console.warn("Incorrect area in test ", testcase.caption);
+        console.assert(a > 0.995 && a < 1.005, "Incorrect area in test ", testcase.caption, testcase, area2);
 
       }
 
 
       if (testcase.count > 0 && Math.abs(solution.length - testcase.count) > 0) {
-        if (Math.abs(solution.length - testcase.count) < 2) {
-          console.warn(`Incorrect count in test ${testcase.caption}, expect:${testcase.count}, actual:${solution.length}`)
-          console.warn(testcase)
-        }
+        console.assert(Math.abs(solution.length - testcase.count) < 2, `Incorrect count in test ${testcase.caption}, expect:${testcase.count}, actual:${solution.length}`, testcase)
       }
     })
 
