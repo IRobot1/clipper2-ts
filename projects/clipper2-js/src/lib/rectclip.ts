@@ -308,59 +308,54 @@ export class RectClip64 {
     return { success:true, loc, ip };
   }
 
-  // TODO: handle ref - protected void GetNextLocation(Path64 path, ref Location loc, ref int i, int highI)
-  // Note: In TypeScript, all parameters are passed by value.
-  // Thus, if you want to modify the original value of 'i' or 'loc' outside the function,
-  // consider wrapping them in an object or return them from the function.
+  protected getNextLocation(path: any[], context: { loc: Location, i: number, highI: number }): void {
 
-  protected getNextLocation(path: any[], loc: Location, i: number, highI: number): void {
-
-    switch (loc) {
+    switch (context.loc) {
       case Location.left:
-        while (i <= highI && path[i].X <= this.rect.left) i++;
-        if (i > highI) break;
-        if (path[i].X >= this.rect.right) loc = Location.right;
-        else if (path[i].Y <= this.rect.top) loc = Location.top;
-        else if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
-        else loc = Location.inside;
+        while (context.i <= context.highI && path[context.i].X <= this.rect.left) context.i++;
+        if (context.i > context.highI) break;
+        if (path[context.i].X >= this.rect.right) context.loc = Location.right;
+        else if (path[context.i].Y <= this.rect.top) context.loc = Location.top;
+        else if (path[context.i].Y >= this.rect.bottom) context.loc = Location.bottom;
+        else context.loc = Location.inside;
         break;
 
       case Location.top:
-        while (i <= highI && path[i].Y <= this.rect.top) i++;
-        if (i > highI) break;
-        if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
-        else if (path[i].X <= this.rect.left) loc = Location.left;
-        else if (path[i].X >= this.rect.right) loc = Location.right;
-        else loc = Location.inside;
+        while (context.i <= context.highI && path[context.i].Y <= this.rect.top) context.i++;
+        if (context.i > context.highI) break;
+        if (path[context.i].Y >= this.rect.bottom) context.loc = Location.bottom;
+        else if (path[context.i].X <= this.rect.left) context.loc = Location.left;
+        else if (path[context.i].X >= this.rect.right) context.loc = Location.right;
+        else context.loc = Location.inside;
         break;
 
       case Location.right:
-        while (i <= highI && path[i].X >= this.rect.right) i++;
-        if (i > highI) break;
-        if (path[i].X <= this.rect.left) loc = Location.left;
-        else if (path[i].Y <= this.rect.top) loc = Location.top;
-        else if (path[i].Y >= this.rect.bottom) loc = Location.bottom;
-        else loc = Location.inside;
+        while (context.i <= context.highI && path[context.i].X >= this.rect.right) context.i++;
+        if (context.i > context.highI) break;
+        if (path[context.i].X <= this.rect.left) context.loc = Location.left;
+        else if (path[context.i].Y <= this.rect.top) context.loc = Location.top;
+        else if (path[context.i].Y >= this.rect.bottom) context.loc = Location.bottom;
+        else context.loc = Location.inside;
         break;
 
       case Location.bottom:
-        while (i <= highI && path[i].Y >= this.rect.bottom) i++;
-        if (i > highI) break;
-        if (path[i].Y <= this.rect.top) loc = Location.top;
-        else if (path[i].X <= this.rect.left) loc = Location.left;
-        else if (path[i].X >= this.rect.right) loc = Location.right;
-        else loc = Location.inside;
+        while (context.i <= context.highI && path[context.i].Y >= this.rect.bottom) context.i++;
+        if (context.i > context.highI) break;
+        if (path[context.i].Y <= this.rect.top) context.loc = Location.top;
+        else if (path[context.i].X <= this.rect.left) context.loc = Location.left;
+        else if (path[context.i].X >= this.rect.right) context.loc = Location.right;
+        else context.loc = Location.inside;
         break;
 
       case Location.inside:
-        while (i <= highI) {
-          if (path[i].X < this.rect.left) loc = Location.left;
-          else if (path[i].X > this.rect.right) loc = Location.right;
-          else if (path[i].Y > this.rect.bottom) loc = Location.bottom;
-          else if (path[i].Y < this.rect.top) loc = Location.top;
+        while (context.i <= context.highI) {
+          if (path[context.i].X < this.rect.left) context.loc = Location.left;
+          else if (path[context.i].X > this.rect.right) context.loc = Location.right;
+          else if (path[context.i].Y > this.rect.bottom) context.loc = Location.bottom;
+          else if (path[context.i].Y < this.rect.top) context.loc = Location.top;
           else {
-            this.add(path[i]);  
-            i++;
+            this.add(path[context.i]);  
+            context.i++;
             continue;
           }
           break;
@@ -401,7 +396,7 @@ export class RectClip64 {
     while (i <= highI) {
       prev = loc;
       const prevCrossLoc: Location = crossingLoc;
-      this.getNextLocation(path, loc, i, highI);
+      this.getNextLocation(path, { loc, i, highI });
       if (i > highI) break;
 
       const prevPt = (i == 0) ? path[highI] : path[i - 1];
@@ -809,7 +804,7 @@ export class RectClipLines64 extends RectClip64 {
 
     while (i <= highI) {
       prev = loc;
-      this.getNextLocation(path, loc, i, highI);
+      this.getNextLocation(path, { loc, i, highI });
 
       if (i > highI) break;
 
