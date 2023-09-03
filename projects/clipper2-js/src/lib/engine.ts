@@ -1506,7 +1506,7 @@ export class ClipperBase {
     this.reset();
 
     let y = this.popScanline()
-    if (!y) return
+    if (y === undefined) return
 
     while (this._succeeded) {
       this.insertLocalMinimaIntoAEL(y)
@@ -1523,7 +1523,7 @@ export class ClipperBase {
       this._currentBotY = y;  // bottom of scanbeam
 
       y = this.popScanline()
-      if (!y) break;  // y new top of scanbeam
+      if (y === undefined) break;  // y new top of scanbeam
 
       this.doIntersections(y);
       this.doTopOfScanbeam(y);
@@ -1918,7 +1918,7 @@ export class ClipperBase {
     this._sel = undefined; // _sel is reused to flag horizontals (see pushHorz below)
     let ae: Active | undefined = this._actives;
 
-    while (ae !== undefined) {
+    while (ae) {
       // NB 'ae' will never be horizontal here
       if (ae.top.y === y) {
         ae.curX = ae.top.x;
