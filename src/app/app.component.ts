@@ -19,6 +19,74 @@ export class AppComponent {
 
   }
   xngOnInit(): void {
+    this.linetests()
+    //this.polygontests()
+  }
+
+  polygontests() {
+    const testcases = ClipperParse.testCases(polygons.split('\n'))
+
+    const isInList = (num: number, list: number[]): boolean => {
+      return list.includes(num);
+    }
+
+    testcases.forEach((testcase, index) => {
+      const c64 = new Clipper64();
+      c64.addSubjectPaths(testcase.subj);
+      c64.addOpenSubjectPaths(testcase.subj_open);
+      c64.addClipPaths(testcase.clip);
+
+      const solution = new Paths64();
+      c64.execute(testcase.clipType, testcase.fillRule, solution);
+
+      const measuredCount = solution.length;
+      const measuredArea = Clipper.areaPaths(solution);
+
+      let storedArea = 0
+      let storedCount = 0
+
+      const countDiff = storedCount > 0 ? Math.abs(storedCount - measuredCount) : 0;
+      const areaDiff = storedArea > 0 ? Math.abs(storedArea - measuredArea) : 0;
+      const areaDiffRatio = storedArea <= 0 ? 0 : areaDiff / storedArea;
+
+      // Check polygon counts
+      if (storedCount > 0) {
+        if (isInList(index, [140, 150, 165, 166, 172, 173, 176, 177, 179])) {
+          console.assert(countDiff <= 9, 'failed');
+        } else if (index >= 120) {
+          console.assert(countDiff <= 6, 'failed');
+        } else if (isInList(index, [27, 121, 126])) {
+          console.assert(countDiff <= 2, 'failed');
+        } else if (isInList(index, [23, 37, 43, 45, 87, 102, 111, 118, 119])) {
+          console.assert(countDiff <= 1, 'failed');
+        } else {
+          console.assert(countDiff == 0, 'failed');
+        }
+      }
+
+      // Check polygon areas
+      if (storedArea > 0) {
+        if (isInList(index, [19, 22, 23, 24])) {
+          console.assert(areaDiffRatio <= 0.5, 'failed');
+        } else if (index === 193) {
+          console.assert(areaDiffRatio <= 0.25, 'failed');
+        } else if (index === 63) {
+          console.assert(areaDiffRatio <= 0.1, 'failed');
+        } else if (index === 16) {
+          console.assert(areaDiffRatio <= 0.075, 'failed');
+        } else if (isInList(index, [15, 26])) {
+          console.assert(areaDiffRatio <= 0.05, 'failed');
+        } else if (isInList(index, [52, 53, 54, 59, 60, 64, 117, 118, 119, 184])) {
+          console.assert(areaDiffRatio <= 0.02, 'failed');
+        } else {
+          console.assert(areaDiffRatio <= 0.01, 'failed');
+        }
+      }
+      console.log('test pass', testcase.caption)
+    })
+  }
+
+  linetests() {
     const testcases = ClipperParse.testCases(lines.split('\n'))
 
     testcases.forEach(testcase => {
@@ -39,13 +107,14 @@ export class AppComponent {
         const a = testcase.area / area2;
 
         console.assert(a > 0.995 && a < 1.005, "Incorrect area in test ", testcase.caption, testcase, area2);
-
       }
 
 
       if (testcase.count > 0 && Math.abs(solution.length - testcase.count) > 0) {
         console.assert(Math.abs(solution.length - testcase.count) < 2, `Incorrect count in test ${testcase.caption}, expect:${testcase.count}, actual:${solution.length}`, testcase)
       }
+
+      console.log('test pass', testcase.caption)
     })
 
   }

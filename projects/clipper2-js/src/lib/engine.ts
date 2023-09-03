@@ -484,7 +484,7 @@ export class ClipperBase {
 
   private static getMaximaPair(ae: Active): Active | undefined {
     let ae2: Active | undefined = ae.nextInAEL;
-    while (ae2 !== undefined) {
+    while (ae2) {
       if (ae2.vertexTop === ae.vertexTop) return ae2; // Found!
       ae2 = ae2.nextInAEL;
     }
@@ -981,7 +981,7 @@ export class ClipperBase {
         rightBound.top = localMinima.vertex.next!.pt
         rightBound.outrec = undefined
         rightBound.localMin = localMinima
-
+  
         ClipperBase.setDx(rightBound);
       }
 
@@ -1004,7 +1004,7 @@ export class ClipperBase {
         rightBound = undefined;
       }
 
-      let contributing: boolean;
+      let contributing = false
       leftBound!.isLeftBound = true;
       this.insertLeftEdge(leftBound!);
 
@@ -1026,20 +1026,21 @@ export class ClipperBase {
           if (!ClipperBase.isHorizontal(leftBound!)) {
             this.checkJoinLeft(leftBound!, leftBound!.bot);
           }
-
-          while (rightBound.nextInAEL &&
-            ClipperBase.isValidAelOrder(rightBound.nextInAEL, rightBound)) {
-            this.intersectEdges(rightBound, rightBound.nextInAEL, rightBound.bot);
-            this.swapPositionsInAEL(rightBound, rightBound.nextInAEL);
-          }
-
-          if (ClipperBase.isHorizontal(rightBound)) {
-            this.pushHorz(rightBound);
-          } else {
-            this.checkJoinRight(rightBound, rightBound.bot);
-            this.insertScanline(rightBound.top.y);
-          }
         }
+
+        while (rightBound.nextInAEL &&
+          ClipperBase.isValidAelOrder(rightBound.nextInAEL, rightBound)) {
+          this.intersectEdges(rightBound, rightBound.nextInAEL, rightBound.bot);
+          this.swapPositionsInAEL(rightBound, rightBound.nextInAEL);
+        }
+
+        if (ClipperBase.isHorizontal(rightBound)) {
+          this.pushHorz(rightBound);
+        } else {
+          this.checkJoinRight(rightBound, rightBound.bot);
+          this.insertScanline(rightBound.top.y);
+        }
+
       } else if (contributing) {
         this.startOpenPath(leftBound!, leftBound!.bot);
       }
@@ -1976,7 +1977,7 @@ export class ClipperBase {
     while (nextE !== maxPair) {
       this.intersectEdges(ae, nextE!, ae.top);
       this.swapPositionsInAEL(ae, nextE!);
-      nextE = ae?.nextInAEL || undefined;
+      nextE = ae.nextInAEL
     }
 
     if (ClipperBase.isOpen(ae)) {
@@ -1984,7 +1985,7 @@ export class ClipperBase {
         this.addLocalMaxPoly(ae, maxPair, ae.top);
       this.deleteFromAEL(maxPair);
       this.deleteFromAEL(ae);
-      return (prevE !== undefined ? prevE.nextInAEL : this._actives);
+      return (prevE ? prevE.nextInAEL : this._actives);
     }
 
     // here ae.nextInAel == ENext == EMaxPair ...
@@ -1993,7 +1994,7 @@ export class ClipperBase {
 
     this.deleteFromAEL(ae);
     this.deleteFromAEL(maxPair);
-    return (prevE !== undefined ? prevE.nextInAEL : this._actives);
+    return (prevE ? prevE.nextInAEL : this._actives);
   }
 
   private static isJoined(e: Active): boolean {
