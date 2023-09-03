@@ -128,7 +128,7 @@ export class Rect64 {
   }
 
   public asPath(): Path64 {
-    let result = new Path64(4);
+    let result = new Path64();
     result.push(new Point64(this.left, this.top));
     result.push(new Point64(this.right, this.top));
     result.push(new Point64(this.right, this.bottom));

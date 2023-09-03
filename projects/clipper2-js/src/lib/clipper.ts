@@ -149,7 +149,7 @@ export class Clipper {
   }
 
   public static offsetPath(path: Path64, dx: number, dy: number): Path64 {
-    const result = new Path64(path.length);
+    const result = new Path64();
     for (let pt of path)
       result.push(new Point64(pt.x + dx, pt.y + dy));
     return result;
@@ -233,23 +233,15 @@ export class Clipper {
 
   static makePath(arr: number[]): Path64 {
     let len = arr.length / 2;
-    let p = new Path64(len);
+    let p = new Path64();
     for (let i = 0; i < len; i++)
       p.push(new Point64(arr[i * 2], arr[i * 2 + 1]));
     return p;
   }
 
-  //static makePath(arr: bigint[]): Path64 {
-  //  let len = arr.length / 2;
-  //  let p = new Path64(len);
-  //  for (let i = 0; i < len; i++)
-  //    p.push(new Point64(Number(arr[i * 2]), Number(arr[i * 2 + 1])));
-  //  return p;
-  //}
-
   static stripDuplicates(path: Path64, isClosedPath: boolean): Path64 {
     let cnt = path.length;
-    let result = new Path64(cnt);
+    let result = new Path64();
     if (cnt === 0) return result;
     let lastPt = path[0];
     result.push(lastPt);
