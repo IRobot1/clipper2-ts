@@ -1,8 +1,9 @@
 import { AmbientLight, BufferGeometry, CircleGeometry, MathUtils, Mesh, MeshBasicMaterial, Path, PointLight, Scene, Shape, ShapeGeometry, Vector2 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import { ThreeJSApp } from "./threejs-app"
 import { ClipType, Clipper, Clipper64, FillRule, Path64, PathType, Paths64, Point64 } from "clipper2-js";
+
+import { ThreeJSApp } from "./threejs-app"
 import { ClipperParse } from "../../projects/clipper2-js/tests/clipperparse";
 
 export class ClipperExample {
@@ -34,46 +35,49 @@ export class ClipperExample {
     // star 1
     const star1shape = this.createStarShape(50)
     const star1geometry = new ShapeGeometry(star1shape)
-    star1geometry.center()
 
     const star1 = new Mesh(star1geometry, new MeshBasicMaterial({ color: 'blue' }))
     star1.position.z = -0.1
     scene.add(star1)
 
-    // star2 is star1 rotated a bit
-    const tempgeometry = star1geometry.clone()
-    tempgeometry.rotateZ(MathUtils.degToRad(15))
-    //tempgeometry.translate(25, 0, 0)
+    const clipper = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
+    clipper.position.z = 0.1
+    scene.add(clipper)
 
-    const star2shape = this.geometryToShape(tempgeometry)
-    const star2geometry = new ShapeGeometry(star2shape)
+    const star2 = new Mesh(undefined, new MeshBasicMaterial({ color: 'red' }))
+    scene.add(star2)
 
-    scene.add(new Mesh(star2geometry, new MeshBasicMaterial({ color: 'red' })))
 
-    let subj = new Paths64();
-    let clip = new Paths64();
-    subj.push(this.geometryToClipperPath(star1geometry))
-    clip.push(this.geometryToClipperPath(star2geometry));
-    let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
+    let i = 0
+    setInterval(() => {
+      // star2 is star1 rotated a bit
+      const tempgeometry = star1geometry.clone()
+      tempgeometry.rotateZ(MathUtils.degToRad(i))
+      //tempgeometry.translate(0, 0, 0)
 
-    solution.forEach(path => {
-      //const points = this.stringToPoints("19509031,-98078529  38268345,-92387955  55557022,-83146965  70710678,-70710678  83146965,-55557022  92387955,-38268345  98078529,-19509031  100000000,0  98078529,19509031  92387955,38268345  83146965,55557022  70710678,70710678  55557022,83146965  38268345,92387955  19509031,98078529  12500000,98768858  5490969,98078529  -13268345,92387955  -30557022,83146965  -45710678,70710678  -58146965,55557022  -67387955,38268345  -73078529,19509031  -75000000,0  -73078529,-19509031  -67387955,-38268345  -58146965,-55557022  -45710678,-70710678  -30557022,-83146965  -13268345,-92387955  5490969,-98078529  12500000,-98768858")
-      const points = this.clipperPathToPoints(path)
-      //console.warn(points)
-      if (points.length > 0) {
+      const star2shape = this.geometryToShape(tempgeometry)
+      const star2geometry = new ShapeGeometry(star2shape)
+      star2.geometry = star2geometry
 
-        const shape = new Shape(points)
-        const clipper = new Mesh(new ShapeGeometry(shape), new MeshBasicMaterial({ color: 'white' }))
-        clipper.position.z = 0.1
-        scene.add(clipper)
-      }
+      let subj = new Paths64();
+      let clip = new Paths64();
+      subj.push(this.geometryToClipperPath(star1geometry))
+      clip.push(this.geometryToClipperPath(star2geometry));
+      let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
 
-      points.forEach(point => {
-        const mesh = new Mesh(new CircleGeometry(0.1))
-        mesh.position.set(point.x, point.y, 1)
-        scene.add(mesh)
+      solution.forEach(path => {
+        //const points = this.stringToPoints("19509031,-98078529  38268345,-92387955  55557022,-83146965  70710678,-70710678  83146965,-55557022  92387955,-38268345  98078529,-19509031  100000000,0  98078529,19509031  92387955,38268345  83146965,55557022  70710678,70710678  55557022,83146965  38268345,92387955  19509031,98078529  12500000,98768858  5490969,98078529  -13268345,92387955  -30557022,83146965  -45710678,70710678  -58146965,55557022  -67387955,38268345  -73078529,19509031  -75000000,0  -73078529,-19509031  -67387955,-38268345  -58146965,-55557022  -45710678,-70710678  -30557022,-83146965  -13268345,-92387955  5490969,-98078529  12500000,-98768858")
+        const points = this.clipperPathToPoints(path)
+        //console.warn(points)
+        if (points.length > 0) {
+
+          const shape = new Shape(points)
+          clipper.geometry = new ShapeGeometry(shape)
+        }
+
       })
-    })
+      i += 1
+    }, 1000 / 30)
 
 
     this.dispose = () => {
@@ -130,7 +134,7 @@ export class ClipperExample {
     return points
   }
 
-  createStarShape(outerRadius = 50, innerRadius = outerRadius * 0.4, spikes = 5): Shape {
+  createStarShape(outerRadius = 50, innerRadius = 20, spikes = 5): Shape {
     const shape = new Shape();
 
     const pi2 = Math.PI * 2;
@@ -138,8 +142,8 @@ export class ClipperExample {
     let angle = -Math.PI / 2; // Starting angle is pointing up.
     const angleIncrement = pi2 / spikes / 2; // Divide by 2 because there are two vertices (inner & outer) per spike.
 
-    shape.moveTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius)
 
+    shape.moveTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius)
     for (let i = 0; i < spikes; i++) {
       shape.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius);
       angle += angleIncrement;
