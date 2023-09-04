@@ -1,10 +1,11 @@
-import { AmbientLight, BufferGeometry, CircleGeometry, MathUtils, Mesh, MeshBasicMaterial, Path, PointLight, Scene, Shape, ShapeGeometry, Vector2 } from "three"
+import { AmbientLight, BufferGeometry, CircleGeometry, MathUtils, Mesh, MeshBasicMaterial, PointLight, Scene, Shape, ShapeGeometry, Vector2 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
 
-import { ClipType, Clipper, Clipper64, FillRule, Path64, PathType, Paths64, Point64 } from "clipper2-js";
+import { Clipper, FillRule, Path64, Paths64, Point64 } from "clipper2-js";
 
 import { ThreeJSApp } from "./threejs-app"
-import { ClipperParse } from "../../projects/clipper2-js/tests/clipperparse";
 
 export class ClipperExample {
 
@@ -15,7 +16,7 @@ export class ClipperExample {
     const scene = new Scene()
     app.scene = scene
 
-    app.camera.position.z = 100
+    app.camera.position.z = 140
 
     const orbit = new OrbitControls(app.camera, app.domElement);
     orbit.target.set(0, app.camera.position.y, 0)
@@ -32,7 +33,24 @@ export class ClipperExample {
     light.shadow.mapSize.width = light.shadow.mapSize.height = 512 * 2
     scene.add(light)
 
-    // star 1
+    const loader = new FontLoader();
+
+    loader.load('assets/helvetiker_regular.typeface.json', function (font) {
+
+      const union = new Mesh(new TextGeometry('Union', { font: font, size: 10, height: 0, bevelEnabled: false }))
+      union.position.set(-135,60,0)
+      scene.add(union)
+
+      const intersection = new Mesh(new TextGeometry('Intersection', { font: font, size: 10, height: 0, bevelEnabled: false }))
+      intersection.position.set(-30,60,0)
+      scene.add(intersection)
+
+      const difference = new Mesh(new TextGeometry('Difference', { font: font, size: 10, height: 0, bevelEnabled: false }))
+      difference.position.set(90,60,0)
+      scene.add(difference)
+
+    });
+    // intersect
     const star1shape = this.createStarShape(50)
     const star1geometry = new ShapeGeometry(star1shape)
 
@@ -40,24 +58,52 @@ export class ClipperExample {
     star1.position.z = -0.1
     scene.add(star1)
 
-    const clipper = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
-    clipper.position.z = 0.1
-    scene.add(clipper)
-
     const star2 = new Mesh(undefined, new MeshBasicMaterial({ color: 'red' }))
     scene.add(star2)
 
+    const intersect = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
+    intersect.position.z = 5
+    scene.add(intersect)
+
+    // union
+    const star3 = new Mesh(star1geometry, new MeshBasicMaterial({ color: 'blue' }))
+    star3.position.z = -0.1
+    star3.position.x = -120
+    scene.add(star3)
+
+    const star4 = new Mesh(undefined, new MeshBasicMaterial({ color: 'red' }))
+    star4.position.x = -120
+    scene.add(star4)
+
+    const union = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
+    union.position.z = 5
+    union.position.x = -120
+    scene.add(union)
+
+    // difference
+    const star5 = new Mesh(star1geometry, new MeshBasicMaterial({ color: 'blue' }))
+    star5.position.z = -0.1
+    star5.position.x = 120
+    scene.add(star5)
+
+    const star6 = new Mesh(undefined, new MeshBasicMaterial({ color: 'red' }))
+    star6.position.x = 120
+    scene.add(star6)
+
+    const diffmesh: Array<Mesh> = []
 
     let i = 0
     setInterval(() => {
       // star2 is star1 rotated a bit
       const tempgeometry = star1geometry.clone()
       tempgeometry.rotateZ(MathUtils.degToRad(i))
-      //tempgeometry.translate(0, 0, 0)
+      //tempgeometry.translate(10, 0, 0)
 
-      const star2shape = this.geometryToShape(tempgeometry)
-      const star2geometry = new ShapeGeometry(star2shape)
+      const tempshape = this.geometryToShape(tempgeometry)
+      const star2geometry = new ShapeGeometry(tempshape)
       star2.geometry = star2geometry
+      star4.geometry = star2geometry
+      star6.geometry = star2geometry
 
       let subj = new Paths64();
       let clip = new Paths64();
@@ -66,16 +112,43 @@ export class ClipperExample {
       let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
 
       solution.forEach(path => {
-        //const points = this.stringToPoints("19509031,-98078529  38268345,-92387955  55557022,-83146965  70710678,-70710678  83146965,-55557022  92387955,-38268345  98078529,-19509031  100000000,0  98078529,19509031  92387955,38268345  83146965,55557022  70710678,70710678  55557022,83146965  38268345,92387955  19509031,98078529  12500000,98768858  5490969,98078529  -13268345,92387955  -30557022,83146965  -45710678,70710678  -58146965,55557022  -67387955,38268345  -73078529,19509031  -75000000,0  -73078529,-19509031  -67387955,-38268345  -58146965,-55557022  -45710678,-70710678  -30557022,-83146965  -13268345,-92387955  5490969,-98078529  12500000,-98768858")
         const points = this.clipperPathToPoints(path)
-        //console.warn(points)
         if (points.length > 0) {
-
           const shape = new Shape(points)
-          clipper.geometry = new ShapeGeometry(shape)
+          intersect.geometry = new ShapeGeometry(shape)
         }
-
       })
+
+      solution = Clipper.Union(subj, clip, FillRule.NonZero);
+
+      solution.forEach(path => {
+        const points = this.clipperPathToPoints(path)
+        if (points.length > 0) {
+          const shape = new Shape(points)
+          union.geometry = new ShapeGeometry(shape)
+        }
+      })
+
+      solution = Clipper.Difference(subj, clip, FillRule.NonZero);
+
+      if (solution.length > diffmesh.length) {
+        solution.forEach(path => {
+          const diff = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
+          diff.position.z = 5
+          diff.position.x = 120
+          scene.add(diff)
+          diffmesh.push(diff)
+        })
+      }
+
+      solution.forEach((path, index) => {
+        const points = this.clipperPathToPoints(path)
+        if (points.length > 0) {
+          const shape = new Shape(points)
+          diffmesh[index].geometry = new ShapeGeometry(shape)
+        }
+      })
+
       i += 1
     }, 1000 / 30)
 
