@@ -1,10 +1,11 @@
 # clipper2-js
-A native Typescript/Javascript port of _[Clipper2](https://github.com/AngusJohnson/Clipper2)_.
+A native Typescript/Javascript port of Clipper2
 
+![image](https://github.com/IRobot1/clipper2-ts/assets/25032599/ff1b68b2-a9f3-468c-afca-ef14f8ec0e1a)
 
 ### Overview
 
-clipper2-js was ported from the original C# implementation.  However, the Java implementation was used as guidance for some conversion solutions
+clipper2-js was ported from the original [Clipper2 C# implementation](https://github.com/AngusJohnson/Clipper2).  However, the Java implementation was used as guidance for some conversion solutions
 
 Clipper2 performs all clipping operations using integer coordinates internally.  Since Javascript doesn't have a native integer data type, all values are rounded. To avoid precision loss, its recommended to scale up any values before adding paths and scale down, by the same factor, the clipped results.
 
