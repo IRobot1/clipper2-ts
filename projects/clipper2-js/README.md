@@ -1,7 +1,8 @@
 # clipper2-js
 A native Typescript/Javascript port of Clipper2
 
-![image](https://github.com/IRobot1/clipper2-ts/assets/25032599/ff1b68b2-a9f3-468c-afca-ef14f8ec0e1a)
+![image](https://github.com/IRobot1/clipper2-ts/assets/25032599/d7d372fe-d680-46c3-bc98-01a057e92b2a)
+
 
 ### Overview
 
