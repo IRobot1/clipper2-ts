@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:ci": "jest --runInBand"
+    "test:ci": "jest --runInBand",
+    "publish": "ng build clipper2-js --configuration production && cd dist/clipper2-js && npm publish --access=public"
   },
   "private": true,
   "dependencies": {
