@@ -9,14 +9,10 @@ test('TestOpenPaths', () => {
     const c64 = new Clipper64();
     c64.addSubjectPaths(testcase.subj);
     c64.addOpenSubjectPaths(testcase.subj_open);
-
-    const clip = new Path64();
-    c64.addClip(clip);
+    c64.addClipPaths(testcase.clip);
 
     const solution = new Paths64();
     c64.execute(testcase.clipType, testcase.fillRule, solution);
-
-    console.log('test', testcase)
 
     if (testcase.area > 0) {
       const area2 = Clipper.areaPaths(solution);
@@ -26,7 +22,6 @@ test('TestOpenPaths', () => {
       expect(a).toBeLessThanOrEqual(1.005);
 
     }
-
 
     if (testcase.count > 0 && Math.abs(solution.length - testcase.count) > 0) {
       expect(Math.abs(solution.length - testcase.count)).toBeLessThan(2);

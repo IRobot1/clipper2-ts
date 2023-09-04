@@ -15,8 +15,7 @@ test('TestClosedPaths', () => {
     c64.addClipPaths(testcase.clip);
 
     const solution = new Paths64();
-    const solution_open = new Paths64();
-    c64.execute(testcase.clipType, testcase.fillRule, solution, solution_open);
+    c64.execute(testcase.clipType, testcase.fillRule, solution);
 
     const measuredCount = solution.length;
     const measuredArea = Clipper.areaPaths(solution);

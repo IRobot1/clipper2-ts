@@ -35,7 +35,7 @@ export class ClipperParse {
           cases.push(new TestCase(caption, ct, fillRule, area, count, GetIdx, new Paths64(...subj), new Paths64(...subj_open), new Paths64(...clip), cases.length + 1))
           subj.length = 0
           subj_open.length = 0
-          clip .length = 0
+          clip.length = 0
           GetIdx = 0
         }
         continue
@@ -123,98 +123,18 @@ export class ClipperParse {
   }
 
   static pathFromStr(s: string | undefined): Paths64 {
-    if (!s) return new Paths64()
+    const pp = new Paths64()
+    if (s) {
+      let p = new Path64()
+      const pairs = s.split(' ')
 
-    let p: Path64 = new Path64()
-    const pp: Paths64 = new Paths64()
-    const len: number = s.length
-    let i: number = 0, j: number
-    const pairs = s.split(' ')
-    pairs.forEach(pair => {
-      const point = pair.split(',')
-      const x = +point[0]
-      const y = +point[1]
-      p.push(new Point64(x, y))
-    })
-    pp.push(p)
-    return pp
-    //while (i < len) {
-    //  let isNeg: boolean
-    //  while (s.charCodeAt(i) < 33 && i < len) {
-    //    i++
-    //  }
-    //  if (i >= len) {
-    //    break
-    //  }
-    //  // get X ...
-    //  isNeg = s.charCodeAt(i) === 45
-    //  if (isNeg) {
-    //    i++
-    //  }
-    //  if (i >= len || s.charCodeAt(i) < 48 || s.charCodeAt(i) > 57) {
-    //    break
-    //  }
-    //  j = i + 1
-    //  while (j < len && s.charCodeAt(j) > 47 && s.charCodeAt(j) < 58) {
-    //    j++
-    //  }
-    //  let x: number | undefined = ClipperParse.longTryParse(s.substring(i, j))
-    //  if (x === undefined) {
-    //    break
-    //  }
-    //  if (isNeg) {
-    //    x = -x
-    //  }
-    //  // skip space or comma between X & Y ...
-    //  i = j
-    //  while (i < len && (s.charCodeAt(i) === 32 || s.charCodeAt(i) === 44)) {
-    //    i++
-    //  }
-    //  // get Y ...
-    //  if (i >= len) {
-    //    break
-    //  }
-    //  isNeg = s.charCodeAt(i) === 45
-    //  if (isNeg) {
-    //    i++
-    //  }
-    //  if (i >= len || s.charCodeAt(i) < 48 || s.charCodeAt(i) > 57) {
-    //    break
-    //  }
-    //  j = i + 1
-    //  while (j < len && s.charCodeAt(j) > 47 && s.charCodeAt(j) < 58) {
-    //    j++
-    //  }
-    //  let y: number | undefined = ClipperParse.longTryParse(s.substring(i, j))
-    //  if (y === undefined) {
-    //    break
-    //  }
-    //  if (isNeg) {
-    //    y = -y
-    //  }
-    //  p.push(new Point64(x, y))
-    //  // skip trailing space, comma ...
-    //  i = j
-    //  let nlCnt: number = 0
-    //  while (i < len && (s.charCodeAt(i) < 33 || s.charCodeAt(i) === 44)) {
-    //    if (i >= len) {
-    //      break
-    //    }
-    //    if (s.charCodeAt(i) === 10) {
-    //      nlCnt++
-    //      if (nlCnt === 2) {
-    //        if (p.length > 0) {
-    //          pp.push(p)
-    //        }
-    //        p = new Path64()
-    //      }
-    //    }
-    //    i++
-    //  }
-    //}
-    //if (p.length > 0) {
-    //  pp.push(p)
-    //}
+      pairs.forEach(pair => {
+        const point = pair.split(',')
+        p.push(new Point64(+point[0], +point[1]))
+      })
+
+      pp.push(p)
+    }
     return pp
   }
 
