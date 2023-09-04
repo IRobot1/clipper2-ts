@@ -20,8 +20,8 @@ export class AppComponent {
   }
 
   xngOnInit(): void {
-    this.linetests()
-    //this.polygontests()
+    //this.linetests()
+    this.polygontests()
   }
 
   polygontests() {
@@ -31,15 +31,15 @@ export class AppComponent {
       return list.includes(num);
     }
 
-    testcases.forEach((testcase, index) => {
+    testcases.filter(x=> x.testNum==15).forEach((testcase, index) => {
       const c64 = new Clipper64();
       c64.addSubjectPaths(testcase.subj);
       c64.addOpenSubjectPaths(testcase.subj_open);
       c64.addClipPaths(testcase.clip);
-
+      
       const solution = new Paths64();
       c64.execute(testcase.clipType, testcase.fillRule, solution);
-
+      console.warn(solution)
       const measuredCount = solution.length;
       const measuredArea = Clipper.areaPaths(solution);
 
@@ -53,37 +53,37 @@ export class AppComponent {
       // Check polygon counts
       if (storedCount > 0) {
         if (isInList(index, [140, 150, 165, 166, 172, 173, 176, 177, 179])) {
-          console.assert(countDiff <= 9, 'failed');
+          console.assert(countDiff <= 9, testcase.caption+' count failed', testcase.count, measuredCount);
         } else if (index >= 120) {
-          console.assert(countDiff <= 6, 'failed');
+          console.assert(countDiff <= 6, testcase.caption +' count failed', testcase.count, measuredCount);
         } else if (isInList(index, [27, 121, 126])) {
-          console.assert(countDiff <= 2, 'failed');
+          console.assert(countDiff <= 2, testcase.caption +' count failed', testcase.count, measuredCount);
         } else if (isInList(index, [23, 37, 43, 45, 87, 102, 111, 118, 119])) {
-          console.assert(countDiff <= 1, 'failed');
+          console.assert(countDiff <= 1, testcase.caption +' count failed', testcase.count, measuredCount);
         } else {
-          console.assert(countDiff == 0, 'failed');
+          console.assert(countDiff == 0, testcase.caption +' count failed', testcase.count, measuredCount);
         }
       }
 
       // Check polygon areas
       if (storedArea > 0) {
         if (isInList(index, [19, 22, 23, 24])) {
-          console.assert(areaDiffRatio <= 0.5, 'failed');
+          console.assert(areaDiffRatio <= 0.5, testcase.caption +' area failed', testcase.area, measuredArea);
         } else if (index === 193) {
-          console.assert(areaDiffRatio <= 0.25, 'failed');
+          console.assert(areaDiffRatio <= 0.25, testcase.caption +' area failed', testcase.area, measuredArea);
         } else if (index === 63) {
-          console.assert(areaDiffRatio <= 0.1, 'failed');
+          console.assert(areaDiffRatio <= 0.1, testcase.caption +' area failed', testcase.area, measuredArea);
         } else if (index === 16) {
-          console.assert(areaDiffRatio <= 0.075, 'failed');
+          console.assert(areaDiffRatio <= 0.075, testcase.caption +' area failed', testcase.area, measuredArea);
         } else if (isInList(index, [15, 26])) {
-          console.assert(areaDiffRatio <= 0.05, 'failed');
+          console.assert(areaDiffRatio <= 0.05, testcase.caption +' area failed', testcase.area, measuredArea);
         } else if (isInList(index, [52, 53, 54, 59, 60, 64, 117, 118, 119, 184])) {
-          console.assert(areaDiffRatio <= 0.02, 'failed');
+          console.assert(areaDiffRatio <= 0.02, testcase.caption +' area failed', testcase.area, measuredArea);
         } else {
-          console.assert(areaDiffRatio <= 0.01, 'failed');
+          console.assert(areaDiffRatio <= 0.01, testcase.caption +' area failed', testcase.area, measuredArea);
         }
       }
-      console.log('test pass', testcase.caption)
+     
     })
   }
 
@@ -94,20 +94,16 @@ export class AppComponent {
       const c64 = new Clipper64();
       c64.addSubjectPaths(testcase.subj);
       c64.addOpenSubjectPaths(testcase.subj_open);
-
-      const clip = new Path64();
-      c64.addClip(clip);
+      c64.addClipPaths(testcase.clip);
 
       const solution = new Paths64();
       c64.execute(testcase.clipType, testcase.fillRule, solution);
-
-      //console.warn(solution)
 
       if (testcase.area > 0) {
         const area2 = Clipper.areaPaths(solution);
         const a = testcase.area / area2;
 
-        console.assert(a > 0.995 && a < 1.005, "Incorrect area in test ", testcase.caption, testcase, area2);
+        console.assert(a > 0.995 && a < 1.005, "Incorrect area in test ", testcase.caption, testcase.area, area2);
       }
 
 
@@ -115,7 +111,7 @@ export class AppComponent {
         console.assert(Math.abs(solution.length - testcase.count) < 2, `Incorrect count in test ${testcase.caption}, expect:${testcase.count}, actual:${solution.length}`, testcase)
       }
 
-      console.log('test pass', testcase.caption)
+      console.log('test', testcase.caption)
     })
 
   }
