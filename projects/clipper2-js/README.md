@@ -17,19 +17,19 @@ For more complex clipping operations (e.g. when clipping open paths or when outp
 ### Example
 
 ```ts
-let subj = new Paths64();
-let clip = new Paths64();
+const subj = new Paths64();
+const clip = new Paths64();
 subj.push(Clipper.makePath([ 100, 50, 10, 79, 65, 2, 65, 98, 10, 21 ]));
 clip.push(Clipper.makePath([98, 63, 4, 68, 77, 8, 52, 100, 19, 12]));
-let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
+const solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
 ```
 
 
 ## Port Info
-* ChatGPT did the original port.  The took a few days to get it to compile and a few more days to remove bugs.
+* ChatGPT did most of the code conversion.  It took a few more days to get resulting code to compile. A few more days to add unit tests and remove bugs I'd introduced.
 * Context or return objects are used to replicate C# `ref` (pass-by-reference) behaviour.
 * Code passes all tests: polygon, line and polytree.
 * Uses lower-case (x, y) for point coordinates.
-* Variables and metjods have been renamed to camelCase
+* Variables and methods have been renamed to camelCase
 * Jest units test included
 

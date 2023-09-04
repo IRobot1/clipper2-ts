@@ -86,7 +86,7 @@ export class PointD implements IPoint64 {
       !InternalClipper.isAlmostZero(lhs.y - rhs.y);
   }
 
-  public equals(obj: any): boolean {
+  public equals(obj: PointD): boolean {
     if (obj instanceof PointD) {
       return PointD.equals(this, obj);
     }
@@ -140,7 +140,7 @@ export class ClipperOffset {
 
   public addPath(path: Point64[], joinType: JoinType, endType: EndType): void {
     if (path.length === 0) return;
-    let pp: Point64[][] = [path];
+    const pp: Point64[][] = [path];
     this.addPaths(pp, joinType, endType);
   }
 
@@ -154,15 +154,15 @@ export class ClipperOffset {
     if (this._groupList.length === 0) return;
 
     if (Math.abs(delta) < 0.5) {
-      for (let group of this._groupList) {
-        for (let path of group.inPaths) {
+      for (const group of this._groupList) {
+        for (const path of group.inPaths) {
           this._solution.push(path);
         }
       }
     } else {
       this._delta = delta;
       this._mitLimSqr = (this.MiterLimit <= 1 ? 2.0 : 2.0 / this.sqr(this.MiterLimit));
-      for (let group of this._groupList) {
+      for (const group of this._groupList) {
         this.doGroupOffset(group);
       }
     }
@@ -179,7 +179,7 @@ export class ClipperOffset {
     if (this._groupList.length === 0) return;
 
     // clean up self-intersections ...
-    let c = new Clipper64()
+    const c = new Clipper64()
     c.preserveCollinear = this.PreserveCollinear
     // the solution should retain the orientation of the input
     c.reverseSolution = this.ReverseSolution !== this._groupList[0].pathsReversed
@@ -197,7 +197,7 @@ export class ClipperOffset {
     if (this._groupList.length === 0) return;
 
     // clean up self-intersections ...
-    let c = new Clipper64()
+    const c = new Clipper64()
     c.preserveCollinear = this.PreserveCollinear
     // the solution should retain the orientation of the input
     c.reverseSolution = this.ReverseSolution !== this._groupList[0].pathsReversed
@@ -214,7 +214,7 @@ export class ClipperOffset {
     let dy = pt2.y - pt1.y;
     if (dx === 0 && dy === 0) return new PointD(0, 0);
 
-    let f = 1.0 / Math.sqrt(dx * dx + dy * dy);
+    const f = 1.0 / Math.sqrt(dx * dx + dy * dy);
     dx *= f;
     dy *= f;
 
@@ -227,11 +227,11 @@ export class ClipperOffset {
   }
 
   private static getBoundsAndLowestPolyIdx(paths: Paths64): { index: number, rec: Rect64 } {
-    let rec = new Rect64(false); // ie invalid rect
+    const rec = new Rect64(false); // ie invalid rect
     let lpX: number = Number.MIN_SAFE_INTEGER;
     let index = -1;
     for (let i = 0; i < paths.length; i++) {
-      for (let pt of paths[i]) {
+      for (const pt of paths[i]) {
         if (pt.y >= rec.bottom) {
           if (pt.y > rec.bottom || pt.x < lpX) {
             index = i;
@@ -263,9 +263,9 @@ export class ClipperOffset {
   }
 
   private static normalizeVector(vec: PointD): PointD {
-    let h = this.hypotenuse(vec.x, vec.y);
+    const h = this.hypotenuse(vec.x, vec.y);
     if (this.almostZero(h)) return new PointD(0, 0);
-    let inverseHypot = 1 / h;
+    const inverseHypot = 1 / h;
     return new PointD(vec.x * inverseHypot, vec.y * inverseHypot);
   }
 
@@ -444,7 +444,7 @@ export class ClipperOffset {
 
     group.outPath = [];
     const cnt = path.length;
-    let prev = cnt - 1;
+    const prev = cnt - 1;
     for (let i = 0; i < cnt; i++) {
       this.offsetPoint(group, path, i, prev);
     }
@@ -529,7 +529,7 @@ export class ClipperOffset {
   private doGroupOffset(group: Group): void {
     if (group.endType == EndType.Polygon) {
 
-      let { index } = ClipperOffset.getBoundsAndLowestPolyIdx(group.inPaths);
+      const { index } = ClipperOffset.getBoundsAndLowestPolyIdx(group.inPaths);
 
       if (index < 0) return;
 
@@ -570,7 +570,7 @@ export class ClipperOffset {
     const isJoined = group.endType == EndType.Joined || group.endType == EndType.Polygon;
 
     for (const p of group.inPaths) {
-      let path = Clipper.stripDuplicates(p, isJoined);
+      const path = Clipper.stripDuplicates(p, isJoined);
       const cnt = path.length;
 
       if (cnt === 0 || (cnt < 3 && this._endType == EndType.Polygon)) {

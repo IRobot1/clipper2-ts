@@ -33,8 +33,8 @@ export class ThreeJSApp extends WebGLRenderer {
     this.shadowMap.enabled = true;
 
     window.addEventListener('resize', () => {
-      var width = window.innerWidth;
-      var height = window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       this.setSize(width, height);
 
       if (this.camera.type == 'PerspectiveCamera') {

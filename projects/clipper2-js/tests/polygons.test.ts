@@ -20,8 +20,8 @@ test('TestClosedPaths', () => {
     const measuredCount = solution.length;
     const measuredArea = Clipper.areaPaths(solution);
 
-    let storedArea = 0
-    let storedCount = 0
+    const storedArea = testcase.area
+    const storedCount = testcase.count
 
     const countDiff = storedCount > 0 ? Math.abs(storedCount - measuredCount) : 0;
     const areaDiff = storedArea > 0 ? Math.abs(storedArea - measuredArea) : 0;

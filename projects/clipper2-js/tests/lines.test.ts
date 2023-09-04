@@ -1,4 +1,4 @@
-import { Clipper64, Paths64, Path64, Clipper } from '../src/public-api';
+import { Clipper64, Paths64, Clipper } from '../src/public-api';
 import { ClipperParse } from './clipperparse';
 
 

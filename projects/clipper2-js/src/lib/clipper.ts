@@ -116,7 +116,7 @@ export class Clipper {
     const cnt = path.length;
     if (cnt < 3) return 0.0;
     let prevPt = path[cnt - 1];
-    for (let pt of path) {
+    for (const pt of path) {
       a += (prevPt.y + pt.y) * (prevPt.x - pt.x);
       prevPt = pt;
     }
@@ -125,7 +125,7 @@ export class Clipper {
 
   public static areaPaths(paths: Paths64): number {
     let a = 0.0;
-    for (let path of paths)
+    for (const path of paths)
       a += this.area(path);
     return a;
   }
@@ -136,21 +136,21 @@ export class Clipper {
 
   public static path64ToString(path: Path64): string {
     let result = "";
-    for (let pt of path)
+    for (const pt of path)
       result += pt.toString();
     return result + '\n';
   }
 
   public static paths64ToString(paths: Paths64): string {
     let result = "";
-    for (let path of paths)
+    for (const path of paths)
       result += this.path64ToString(path);
     return result;
   }
 
   public static offsetPath(path: Path64, dx: number, dy: number): Path64 {
     const result = new Path64();
-    for (let pt of path)
+    for (const pt of path)
       result.push(new Point64(pt.x + dx, pt.y + dy));
     return result;
   }
@@ -232,16 +232,16 @@ export class Clipper {
   }
 
   static makePath(arr: number[]): Path64 {
-    let len = arr.length / 2;
-    let p = new Path64();
+    const len = arr.length / 2;
+    const p = new Path64();
     for (let i = 0; i < len; i++)
       p.push(new Point64(arr[i * 2], arr[i * 2 + 1]));
     return p;
   }
 
   static stripDuplicates(path: Path64, isClosedPath: boolean): Path64 {
-    let cnt = path.length;
-    let result = new Path64();
+    const cnt = path.length;
+    const result = new Path64();
     if (cnt === 0) return result;
     let lastPt = path[0];
     result.push(lastPt);
@@ -483,13 +483,13 @@ export class Clipper {
     if (radiusY <= 0) radiusY = radiusX;
     if (steps <= 2) steps = Math.ceil(Math.PI * Math.sqrt((radiusX + radiusY) / 2));
 
-    let si = Math.sin(2 * Math.PI / steps);
-    let co = Math.cos(2 * Math.PI / steps);
+    const si = Math.sin(2 * Math.PI / steps);
+    const co = Math.cos(2 * Math.PI / steps);
     let dx = co, dy = si;
-    let result: Path64 = [{ x: center.x + radiusX, y: center.y }];
+    const result: Path64 = [{ x: center.x + radiusX, y: center.y }];
     for (let i = 1; i < steps; ++i) {
       result.push({ x: center.x + radiusX * dx, y: center.y + radiusY * dy });
-      let x = dx * co - dy * si;
+      const x = dx * co - dy * si;
       dy = dy * co + dx * si;
       dx = x;
     }
@@ -497,8 +497,8 @@ export class Clipper {
   }
 
   private static showPolyPathStructure(pp: PolyPathBase, level: number): void {
-    let spaces = ' '.repeat(level * 2);
-    let caption = pp.isHole ? "Hole " : "Outer ";
+    const spaces = ' '.repeat(level * 2);
+    const caption = pp.isHole ? "Hole " : "Outer ";
     if (pp.count === 0) {
       console.log(spaces + caption);
     } else {

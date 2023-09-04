@@ -128,7 +128,7 @@ export class Rect64 {
   }
 
   public asPath(): Path64 {
-    let result = new Path64();
+    const result = new Path64();
     result.push(new Point64(this.left, this.top));
     result.push(new Point64(this.right, this.top));
     result.push(new Point64(this.right, this.bottom));
@@ -184,7 +184,7 @@ export class Point64 implements IPoint64 {
     return `${this.x},${this.y} `;
   }
 
-  public equals(obj: any): boolean {
+  public equals(obj: Point64): boolean {
     if (obj instanceof Point64) {
       return Point64.equals(this, obj);
     }
@@ -314,7 +314,7 @@ export class InternalClipper {
     let i = start + 1;
     let end = len;
 
-    while (true) {
+    for (; ;) {
       if (i === end) {
         if (end === 0 || start === 0) break;
         end = start;

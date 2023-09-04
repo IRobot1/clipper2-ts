@@ -232,7 +232,6 @@ export class ClipperEngine {
 
       // OK, we have a valid path
       let going_up = false
-      let going_up0: boolean;
 
       if (isOpen) {
         curr_v = v0!.next;
@@ -268,7 +267,7 @@ export class ClipperEngine {
         going_up = prev_v!.pt.y > v0!.pt.y;
       }
 
-      going_up0 = going_up;
+      const going_up0 = going_up;
       prev_v = v0;
       curr_v = v0!.next;
 
@@ -525,8 +524,8 @@ export class ClipperBase {
   }
 
   private static swapOutrecs(ae1: Active, ae2: Active): void {
-    let or1: OutRec | undefined = ae1.outrec;
-    let or2: OutRec | undefined = ae2.outrec;
+    const or1: OutRec | undefined = ae1.outrec;
+    const or2: OutRec | undefined = ae2.outrec;
     if (or1 === or2) {
       const ae: Active | undefined = or1!.frontEdge;
       or1!.frontEdge = or1!.backEdge;
@@ -881,7 +880,7 @@ export class ClipperBase {
       return newcomer.curX > resident.curX;
 
     // get the turning direction  a1.top, a2.bot, a2.top
-    let d: number = InternalClipper.crossProduct(resident.top, newcomer.bot, newcomer.top);
+    const d: number = InternalClipper.crossProduct(resident.top, newcomer.bot, newcomer.top);
     if (d !== 0.0) return (d < 0);
 
     // edges must be collinear to get here
@@ -898,8 +897,8 @@ export class ClipperBase {
         newcomer.top, this.nextVertex(newcomer).pt) >= 0;
     }
 
-    let y: number = newcomer.bot.y;
-    let newcomerIsLeft: boolean = newcomer.isLeftBound;
+    const y: number = newcomer.bot.y;
+    const newcomerIsLeft: boolean = newcomer.isLeftBound;
 
     if (resident.bot.y !== y || resident.localMin.vertex.pt.y !== y)
       return newcomer.isLeftBound;
@@ -981,7 +980,7 @@ export class ClipperBase {
         rightBound.top = localMinima.vertex.next!.pt
         rightBound.outrec = undefined
         rightBound.localMin = localMinima
-  
+
         ClipperBase.setDx(rightBound);
       }
 
@@ -1151,10 +1150,10 @@ export class ClipperBase {
   private static joinOutrecPaths(ae1: Active, ae2: Active): void {
     // join ae2 outrec path onto ae1 outrec path and then delete ae2 outrec path
     // pointers. (NB Only very rarely do the joining ends share the same coords.)
-    let p1Start: OutPt = ae1.outrec!.pts!;
-    let p2Start: OutPt = ae2.outrec!.pts!;
-    let p1End: OutPt = p1Start.next!;
-    let p2End: OutPt = p2Start.next!;
+    const p1Start: OutPt = ae1.outrec!.pts!;
+    const p2Start: OutPt = ae2.outrec!.pts!;
+    const p1End: OutPt = p1Start.next!;
+    const p2End: OutPt = p2Start.next!;
 
     if (ClipperBase.isFront(ae1)) {
       p2End.prev = p1Start;
@@ -1195,15 +1194,15 @@ export class ClipperBase {
   }
 
   private static addOutPt(ae: Active, pt: IPoint64): OutPt {
-    let outrec: OutRec = ae.outrec!;
+    const outrec: OutRec = ae.outrec!;
     const toFront: boolean = ClipperBase.isFront(ae);
-    let opFront: OutPt = outrec.pts!;
-    let opBack: OutPt = opFront.next!;
+    const opFront: OutPt = outrec.pts!;
+    const opBack: OutPt = opFront.next!;
 
     if (toFront && (pt == opFront.pt)) return opFront;
     else if (!toFront && (pt == opBack.pt)) return opBack;
 
-    let newOp = new OutPt(pt, outrec);
+    const newOp = new OutPt(pt, outrec);
     opBack.prev = newOp;
     newOp.prev = opFront;
     newOp.next = opBack;
@@ -1215,13 +1214,13 @@ export class ClipperBase {
   }
 
   private newOutRec(): OutRec {
-    let result = new OutRec(this._outrecList.length);
+    const result = new OutRec(this._outrecList.length);
     this._outrecList.push(result);
     return result;
   }
 
   private startOpenPath(ae: Active, pt: IPoint64): OutPt {
-    let outrec = this.newOutRec();
+    const outrec = this.newOutRec();
     outrec.isOpen = true;
     if (ae.windDx > 0) {
       outrec.frontEdge = ae;
@@ -1232,7 +1231,7 @@ export class ClipperBase {
     }
 
     ae.outrec = outrec;
-    let op = new OutPt(pt, outrec);
+    const op = new OutPt(pt, outrec);
     outrec.pts = op;
     return op;
   }
@@ -1470,8 +1469,8 @@ export class ClipperBase {
 
 
   private deleteFromAEL(ae: Active): void {
-    let prev: Active | undefined = ae.prevInAEL;
-    let next: Active | undefined = ae.nextInAEL;
+    const prev: Active | undefined = ae.prevInAEL;
+    const next: Active | undefined = ae.nextInAEL;
     if (!prev && !next && ae !== this._actives) return;  // already deleted
 
     if (prev)
@@ -1549,7 +1548,7 @@ export class ClipperBase {
   }
 
   private addNewIntersectNode(ae1: Active, ae2: Active, topY: number): void {
-    let result = InternalClipper.getIntersectPt(ae1.bot, ae1.top, ae2.bot, ae2.top)
+    const result = InternalClipper.getIntersectPt(ae1.bot, ae1.top, ae2.bot, ae2.top)
     let ip: IPoint64 = result.ip
     if (!result.success) {
       ip = new Point64(ae1.curX, topY);
@@ -1634,7 +1633,7 @@ export class ClipperBase {
         while (left !== lEnd && right !== rEnd) {
           if (right!.curX < left!.curX) {
             tmp = right!.prevInSEL!;
-            while (true) {
+            for (; ;) {
               this.addNewIntersectNode(tmp, right!, topY);
               if (tmp === left) break;
               tmp = tmp.prevInSEL!;
@@ -1690,7 +1689,7 @@ export class ClipperBase {
           [this._intersectList[i], this._intersectList[j]];
       }
 
-      let node = this._intersectList[i];
+      const node = this._intersectList[i];
       this.intersectEdges(node.edge1, node.edge2, node.pt);
       this.swapPositionsInAEL(node.edge1, node.edge2);
 
@@ -1703,9 +1702,9 @@ export class ClipperBase {
 
   private swapPositionsInAEL(ae1: Active, ae2: Active): void {
     // preconditon: ae1 must be immediately to the left of ae2
-    let next: Active | undefined = ae2.nextInAEL;
+    const next: Active | undefined = ae2.nextInAEL;
     if (next) next.prevInAEL = ae1;
-    let prev: Active | undefined = ae1.prevInAEL;
+    const prev: Active | undefined = ae1.prevInAEL;
     if (prev) prev.nextInAEL = ae2;
     ae2.prevInAEL = prev;
     ae2.nextInAEL = ae1;
@@ -1793,7 +1792,7 @@ export class ClipperBase {
     const horzIsOpen = ClipperBase.isOpen(horz);
     const Y = horz.bot.y;
 
-    let vertex_max: Vertex | undefined = horzIsOpen ?
+    const vertex_max: Vertex | undefined = horzIsOpen ?
       ClipperBase.getCurrYMaximaVertex_Open(horz) :
       ClipperBase.getCurrYMaximaVertex(horz);
 
@@ -1945,11 +1944,8 @@ export class ClipperBase {
   }
 
   private doMaxima(ae: Active): Active | undefined {
-    let prevE: Active | undefined;
-    let nextE: Active | undefined, maxPair: Active | undefined;
-
-    prevE = ae.prevInAEL
-    nextE = ae.nextInAEL
+    const prevE: Active | undefined = ae.prevInAEL
+    let nextE: Active | undefined = ae.nextInAEL
 
     if (ClipperBase.isOpenEndActive(ae)) {
       if (ClipperBase.isHotEdgeActive(ae)) ClipperBase.addOutPt(ae, ae.top);
@@ -1966,7 +1962,7 @@ export class ClipperBase {
       return nextE;
     }
 
-    maxPair = ClipperBase.getMaximaPair(ae);
+    const maxPair: Active | undefined = ClipperBase.getMaximaPair(ae);
     if (!maxPair) return nextE; // eMaxPair is horizontal
 
     if (ClipperBase.isJoined(ae)) this.split(ae, ae.top);
@@ -2089,7 +2085,7 @@ export class ClipperBase {
     let opP = op, opN = op;
 
     if (outrecHasEdges) {
-      let opA = outrec.pts!, opZ = opA.next!;
+      const opA = outrec.pts!, opZ = opA.next!;
       while (opP !== opZ && opP.prev.pt.y === curr_y)
         opP = opP.prev;
       while (opN !== opA && opN.next!.pt.y === curr_y)
@@ -2222,7 +2218,8 @@ export class ClipperBase {
     if (op.pt.y === pt.y)  // not a proper polygon
       return PointInPolygonResult.IsOutside;
 
-    let isAbove = op.pt.y < pt.y, startingAbove = isAbove;
+    let isAbove = op.pt.y < pt.y
+    const startingAbove = isAbove;
     let val = 0;
 
     op2 = op.next!;
@@ -2285,19 +2282,19 @@ export class ClipperBase {
   private moveSplits(fromOr: OutRec, toOr: OutRec): void {
     if (!fromOr.splits) return;
     toOr.splits = toOr.splits || [];
-    for (let i of fromOr.splits) {
+    for (const i of fromOr.splits) {
       toOr.splits.push(i);
     }
     fromOr.splits = undefined;
   }
 
   private processHorzJoins(): void {
-    for (let j of this._horzJoinList) {
-      let or1 = ClipperBase.getRealOutRec(j.op1!.outrec)!;
+    for (const j of this._horzJoinList) {
+      const or1 = ClipperBase.getRealOutRec(j.op1!.outrec)!;
       let or2 = ClipperBase.getRealOutRec(j.op2!.outrec)!;
 
-      let op1b = j.op1!.next!;
-      let op2b = j.op2!.prev!;
+      const op1b = j.op1!.next!;
+      const op2b = j.op2!.prev!;
       j.op1!.next = j.op2!;
       j.op2!.prev = j.op1!;
       op1b.prev = op2b;
@@ -2315,7 +2312,7 @@ export class ClipperBase {
 
         if (this._using_polytree) {
           if (ClipperBase.path1InsidePath2(or1.pts!, or2.pts)) {
-            let tmp = or1.pts;
+            const tmp = or1.pts;
             or1.pts = or2.pts;
             or2.pts = tmp;
             ClipperBase.fixOutRecPts(or1);
@@ -2380,7 +2377,7 @@ export class ClipperBase {
 
     let startOp: OutPt = outrec.pts!;
     let op2: OutPt | undefined = startOp;
-    while (true) {
+    for (; ;) {
       // NB if preserveCollinear == true, then only remove 180 deg. spikes
       if (InternalClipper.crossProduct(op2!.prev.pt, op2!.pt, op2!.next!.pt) === 0 &&
         (op2!.pt === op2!.prev.pt || op2!.pt === op2!.next!.pt || !this.preserveCollinear ||
@@ -2407,23 +2404,23 @@ export class ClipperBase {
   private doSplitOp(outrec: OutRec, splitOp: OutPt): void {
     // splitOp.prev <=> splitOp &&
     // splitOp.next <=> splitOp.next.next are intersecting
-    let prevOp: OutPt = splitOp.prev;
-    let nextNextOp: OutPt = splitOp.next!.next!;
+    const prevOp: OutPt = splitOp.prev;
+    const nextNextOp: OutPt = splitOp.next!.next!;
     outrec.pts = prevOp;
 
-    let ip: IPoint64 = InternalClipper.getIntersectPoint(
+    const ip: IPoint64 = InternalClipper.getIntersectPoint(
       prevOp.pt, splitOp.pt, splitOp.next!.pt, nextNextOp.pt).ip;
 
-    let area1: number = ClipperBase.area(prevOp);
-    let absArea1: number = Math.abs(area1);
+    const area1: number = ClipperBase.area(prevOp);
+    const absArea1: number = Math.abs(area1);
 
     if (absArea1 < 2) {
       outrec.pts = undefined;
       return;
     }
 
-    let area2: number = ClipperBase.areaTriangle(ip, splitOp.pt, splitOp.next!.pt);
-    let absArea2: number = Math.abs(area2);
+    const area2: number = ClipperBase.areaTriangle(ip, splitOp.pt, splitOp.next!.pt);
+    const absArea2: number = Math.abs(area2);
 
     // de-link splitOp and splitOp.next from the path
     // while inserting the intersection point
@@ -2431,7 +2428,7 @@ export class ClipperBase {
       nextNextOp.prev = prevOp;
       prevOp.next = nextNextOp;
     } else {
-      let newOp2 = new OutPt(ip, outrec);
+      const newOp2 = new OutPt(ip, outrec);
       newOp2.prev = prevOp;
       newOp2.next = nextNextOp;
       nextNextOp.prev = newOp2;
@@ -2446,12 +2443,12 @@ export class ClipperBase {
     if (absArea2 > 1 &&
       (absArea2 > absArea1 || (area2 > 0) === (area1 > 0))) {
 
-      let newOutRec: OutRec = this.newOutRec();
+      const newOutRec: OutRec = this.newOutRec();
       newOutRec.owner = outrec.owner;
       splitOp.outrec = newOutRec;
       splitOp.next!.outrec = newOutRec;
 
-      let newOp: OutPt = new OutPt(ip, newOutRec);
+      const newOp: OutPt = new OutPt(ip, newOutRec);
       newOp.prev = splitOp.next!;
       newOp.next = splitOp;
       newOutRec.pts = newOp;
@@ -2473,7 +2470,7 @@ export class ClipperBase {
 
   private fixSelfIntersects(outrec: OutRec): void {
     let op2: OutPt = outrec.pts!;
-    while (true) {
+    for (; ;) {
       if (op2.prev === op2.next!.next) break;
       if (InternalClipper.segsIntersect(op2.prev.pt, op2.pt, op2.next!.pt, op2.next!.next!.pt)) {
         this.doSplitOp(outrec, op2);
@@ -2525,10 +2522,10 @@ export class ClipperBase {
 
     let i = 0;
     while (i < this._outrecList.length) {
-      let outrec = this._outrecList[i++];
+      const outrec = this._outrecList[i++];
       if (!outrec.pts) continue;
 
-      let path = new Path64();
+      const path = new Path64();
       if (outrec.isOpen) {
         if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, true, path)) {
           solutionOpen.push(path);
@@ -2547,8 +2544,8 @@ export class ClipperBase {
 
   private static getBoundsPath(path: Path64): Rect64 {
     if (path.length === 0) return new Rect64();
-    let result = Clipper.InvalidRect64;
-    for (let pt of path) {
+    const result = Clipper.InvalidRect64;
+    for (const pt of path) {
       if (pt.x < result.left) result.left = pt.x;
       if (pt.x > result.right) result.right = pt.x;
       if (pt.y < result.top) result.top = pt.y;
@@ -2568,8 +2565,8 @@ export class ClipperBase {
   }
 
   private checkSplitOwner(outrec: OutRec, splits: number[] | undefined): boolean {
-    for (let i of splits!) {
-      let split: OutRec | undefined = ClipperBase.getRealOutRec(this._outrecList[i]);
+    for (const i of splits!) {
+      const split: OutRec | undefined = ClipperBase.getRealOutRec(this._outrecList[i]);
       if (split === undefined || split === outrec || split.recursiveSplit === outrec) continue;
       split.recursiveSplit = outrec; //#599
       if (split!.splits !== undefined && this.checkSplitOwner(outrec, split.splits)) return true;
@@ -2613,11 +2610,11 @@ export class ClipperBase {
 
     let i = 0;
     while (i < this._outrecList.length) {
-      let outrec: OutRec = this._outrecList[i++];
+      const outrec: OutRec = this._outrecList[i++];
       if (outrec.pts === undefined) continue;
 
       if (outrec.isOpen) {
-        let open_path = new Path64();
+        const open_path = new Path64();
         if (ClipperBase.buildPath(outrec.pts, this.reverseSolution, true, open_path))
           solutionOpen.push(open_path);
         continue;
@@ -2628,8 +2625,8 @@ export class ClipperBase {
   }
 
   public getBounds(): Rect64 {
-    let bounds = Clipper.InvalidRect64;
-    for (let t of this._vertexList) {
+    const bounds = Clipper.InvalidRect64;
+    for (const t of this._vertexList) {
       let v = t;
       do {
         if (v.pt.x < bounds.left) bounds.left = v.pt.x;

@@ -11,7 +11,8 @@ export class TestCase {
     public GetIdx: number,
     public subj: Paths64,
     public subj_open: Paths64,
-    public clip: Paths64, testNum: number) { }
+    public clip: Paths64,
+    public testNum: number) { }
 }
 
 export class ClipperParse {
@@ -23,9 +24,9 @@ export class ClipperParse {
     let area: number = 0
     let count: number = 0
     let GetIdx: number = 0
-    let subj: Paths64 = new Paths64()
-    let subj_open: Paths64 = new Paths64()
-    let clip: Paths64 = new Paths64()
+    const subj = new Paths64()
+    const subj_open = new Paths64()
+    const clip = new Paths64()
 
     const cases: TestCase[] = []
 
@@ -125,7 +126,7 @@ export class ClipperParse {
   static pathFromStr(s: string | undefined): Paths64 {
     const pp = new Paths64()
     if (s) {
-      let p = new Path64()
+      const p = new Path64()
       const pairs = s.split(' ')
 
       pairs.forEach(pair => {

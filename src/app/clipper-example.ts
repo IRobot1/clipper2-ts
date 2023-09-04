@@ -105,8 +105,8 @@ export class ClipperExample {
       star4.geometry = star2geometry
       star6.geometry = star2geometry
 
-      let subj = new Paths64();
-      let clip = new Paths64();
+      const subj = new Paths64();
+      const clip = new Paths64();
       subj.push(this.geometryToClipperPath(star1geometry))
       clip.push(this.geometryToClipperPath(star2geometry));
       let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
@@ -132,7 +132,7 @@ export class ClipperExample {
       solution = Clipper.Difference(subj, clip, FillRule.NonZero);
 
       if (solution.length > diffmesh.length) {
-        solution.forEach(path => {
+        solution.forEach(() => {
           const diff = new Mesh(undefined, new MeshBasicMaterial({ color: 'white' }))
           diff.position.z = 5
           diff.position.x = 120

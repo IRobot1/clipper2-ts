@@ -15,35 +15,35 @@
 //
 
 import { Clipper } from "./clipper";
-import { FillRule, IPoint64, Path64, Paths64, Point64 } from "./core";
+import { FillRule, IPoint64, Path64, Paths64 } from "./core";
 
 
 export class Minkowski {
   private static minkowskiInternal(pattern: Path64, path: Path64, isSum: boolean, isClosed: boolean): Paths64 {
-    let delta = isClosed ? 0 : 1;
-    let patLen = pattern.length;
-    let pathLen = path.length;
-    let tmp: IPoint64[][] = new Array(pathLen);
+    const delta = isClosed ? 0 : 1;
+    const patLen = pattern.length;
+    const pathLen = path.length;
+    const tmp: Array<Array<IPoint64>> = []
 
-    for (let pathPt of path) {
-      let path2: IPoint64[] = new Array(patLen);
+    for (const pathPt of path) {
+      const path2: Array<IPoint64> = []
       if (isSum) {
-        for (let basePt of pattern)
+        for (const basePt of pattern)
           path2.push({ x: pathPt.x + basePt.x, y: pathPt.y + basePt.y });
       } else {
-        for (let basePt of pattern)
+        for (const basePt of pattern)
           path2.push({ x: pathPt.x - basePt.x, y: pathPt.y - basePt.y });
       }
       tmp.push(path2);
     }
 
-    let result: IPoint64[][] = new Array((pathLen - delta) * patLen);
+    const result: Array<Array<IPoint64>> = []
     let g = isClosed ? pathLen - 1 : 0;
 
     let h = patLen - 1;
     for (let i = delta; i < pathLen; i++) {
       for (let j = 0; j < patLen; j++) {
-        let quad: Path64 = [tmp[g][h], tmp[i][h], tmp[i][j], tmp[g][j]];
+        const quad: Path64 = [tmp[g][h], tmp[i][h], tmp[i][j], tmp[g][j]];
         if (!Clipper.isPositive(quad))
           result.push(Clipper.reversePath(quad));
         else
