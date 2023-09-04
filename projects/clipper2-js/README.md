@@ -1,24 +1,35 @@
-# Clipper2Js
+# clipper2-js
+A native Typescript/Javascript port of _[Clipper2](https://github.com/AngusJohnson/Clipper2)_.
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.1.0.
+## Usage
 
-## Code scaffolding
+### Overview
 
-Run `ng generate component component-name --project clipper2-js` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project clipper2-js`.
-> Note: Don't forget to add `--project clipper2-js` or else it will be added to the default project in your `angular.json` file. 
+The interface of *clipper2-js* is equivalent to the original C# version.
 
-## Build
+ClipperD class and corresponding static methods were not converted.
+PathD variants of methods were not converted.
 
-Run `ng build clipper2-js` to build the project. The build artifacts will be stored in the `dist/` directory.
+The `Clipper` class provides static methods for clipping, path-offsetting, minkowski-sums and path simplification.
+For more complex clipping operations (e.g. when clipping open paths or when outputs are expected to include polygons nested within holes of others), use the `Clipper64` class directly.
 
-## Publishing
 
-After building your library with `ng build clipper2-js`, go to the dist folder `cd dist/clipper2-js` and run `npm publish`.
+### Example
 
-## Running unit tests
+```ts
+let subj = new Paths64();
+let clip = new Paths64();
+subj.push(Clipper.makePath([ 100, 50, 10, 79, 65, 2, 65, 98, 10, 21 ]));
+clip.push(Clipper.makePath([98, 63, 4, 68, 77, 8, 52, 100, 19, 12]));
+let solution = Clipper.Intersect(subj, clip, FillRule.NonZero);
+```
 
-Run `ng test clipper2-js` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-## Further help
+## Port Info
+* ChatGPT did the original port.  The took a few days to get it to compile and a few more days to remove bugs.
+* Context or return objects are used to replicate C# `ref` (pass-by-reference) behaviour.
+* Code passes all tests: polygon, line and polytree.
+* Uses lower-case (x, y) for point coordinates.
+* Variables and metjods have been renamed to camelCase
+* Jest units test included
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
