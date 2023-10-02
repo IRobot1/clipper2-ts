@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  19 September 2023                                               *
+* Date      :  24 September 2023                                               *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  Path Offset (Inflate/Shrink)                                    *
@@ -19,9 +19,10 @@ import { ClipType, FillRule, IPoint64, InternalClipper, Path64, Paths64, Point64
 import { Clipper64, PolyTree64 } from "./engine";
 
 export enum JoinType {
+  Miter,
   Square,
-  Round,
-  Miter
+  Bevel,
+  Round
 }
 
 export enum EndType {
@@ -304,6 +305,21 @@ export class ClipperOffset {
     return new PointD(pt.x + norm.x * this._groupDelta, pt.y + norm.y * this._groupDelta);
   }
 
+  private doBevel(group: Group, path: Path64, j: number, k: number) {
+    let pt1: IPoint64, pt2: IPoint64
+    if (j == k) {
+      const absDelta = Math.abs(this._groupDelta);
+      pt1 = new Point64(path[j].x - absDelta * this._normals[j].x, path[j].y - absDelta * this._normals[j].y);
+      pt2 = new Point64(path[j].x + absDelta * this._normals[j].x, path[j].y + absDelta * this._normals[j].y);
+    }
+    else {
+      pt1 = new Point64(path[j].x + this._groupDelta * this._normals[k].x, path[j].y + this._groupDelta * this._normals[k].y);
+      pt2 = new Point64(path[j].x + this._groupDelta * this._normals[j].x, path[j].y + this._groupDelta * this._normals[j].y);
+    }
+    group.outPath.push(pt1);
+    group.outPath.push(pt2);
+  }
+
   private doSquare(group: Group, path: Path64, j: number, k: number): void {
     let vec: PointD;
     if (j === k) {
@@ -429,11 +445,13 @@ export class ClipperOffset {
       } else {
         this.doSquare(group, path, j, k);
       }
-    } else if (cosA > 0.99 || this._joinType === JoinType.Square) {
-      this.doSquare(group, path, j, k);
-    } else {
+    } else if (cosA > 0.99 || this._joinType == JoinType.Bevel)
+      //angle less than 8 degrees or a squared join
+      this.doBevel(group, path, j, k);
+    else if (this._joinType == JoinType.Round)
       this.doRound(group, path, j, k, Math.atan2(sinA, cosA));
-    }
+    else
+      this.doSquare(group, path, j, k);
 
     k = j;
   }
@@ -475,11 +493,7 @@ export class ClipperOffset {
     } else {
       switch (this._endType) {
         case EndType.Butt:
-          group.outPath.push(new Point64(
-            path[0].x - this._normals[0].x * this._groupDelta,
-            path[0].y - this._normals[0].y * this._groupDelta
-          ));
-          group.outPath.push(this.getPerpendic(path[0], this._normals[0]));
+          this.doBevel(group, path, 0, 0);
           break;
         case EndType.Round:
           this.doRound(group, path, 0, 0, Math.PI);
@@ -508,11 +522,7 @@ export class ClipperOffset {
     } else {
       switch (this._endType) {
         case EndType.Butt:
-          group.outPath.push(new Point64(
-            path[highI].x - this._normals[highI].x * this._groupDelta,
-            path[highI].y - this._normals[highI].y * this._groupDelta
-          ));
-          group.outPath.push(this.getPerpendic(path[highI], this._normals[highI]));
+          this.doBevel(group, path, highI, highI);
           break;
         case EndType.Round:
           this.doRound(group, path, highI, highI, Math.PI);
