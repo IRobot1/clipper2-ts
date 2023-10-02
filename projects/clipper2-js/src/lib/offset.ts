@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  16 September 2023                                               *
+* Date      :  19 September 2023                                               *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  Path Offset (Inflate/Shrink)                                    *
@@ -366,15 +366,14 @@ export class ClipperOffset {
     let offsetVec = new PointD(this._normals[k].x * this._groupDelta, this._normals[k].y * this._groupDelta);
     if (j === k) offsetVec.negate();
     group.outPath.push(new Point64(pt.x + offsetVec.x, pt.y + offsetVec.y));
-    if (angle > -Math.PI + 0.01) {
-      const steps = Math.ceil(this._stepsPerRad * Math.abs(angle));
-      for (let i = 1; i < steps; i++) {
-        offsetVec = new PointD(
-          offsetVec.x * this._stepCos - this._stepSin * offsetVec.y,
-          offsetVec.x * this._stepSin + offsetVec.y * this._stepCos
-        );
-        group.outPath.push(new Point64(pt.x + offsetVec.x, pt.y + offsetVec.y));
-      }
+
+    const steps = Math.ceil(this._stepsPerRad * Math.abs(angle));
+    for (let i = 1; i < steps; i++) {
+      offsetVec = new PointD(
+        offsetVec.x * this._stepCos - this._stepSin * offsetVec.y,
+        offsetVec.x * this._stepSin + offsetVec.y * this._stepCos
+      );
+      group.outPath.push(new Point64(pt.x + offsetVec.x, pt.y + offsetVec.y));
     }
     group.outPath.push(this.getPerpendic(pt, this._normals[j]));
   }
