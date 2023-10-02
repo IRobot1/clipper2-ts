@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  26 July 2023                                                    *
+* Date      :  19 September 2023                                               *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  Core structures and functions for the Clipper Library           *
@@ -232,7 +232,7 @@ export class InternalClipper {
   }
 
 
-  public static getIntersectPt(ln1a: IPoint64, ln1b: IPoint64, ln2a: IPoint64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
+  public static getIntersectPoint(ln1a: IPoint64, ln1b: IPoint64, ln2a: IPoint64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
     const dy1 = ln1b.y - ln1a.y;
     const dx1 = ln1b.x - ln1a.x;
     const dy2 = ln2b.y - ln2a.y;
@@ -253,26 +253,6 @@ export class InternalClipper {
     return { ip, success: true };
   }
 
-  public static getIntersectPoint(ln1a: IPoint64, ln1b: IPoint64, ln2a: IPoint64, ln2b: IPoint64): { ip: IPoint64, success: boolean } {
-    const dy1 = ln1b.y - ln1a.y;
-    const dx1 = ln1b.x - ln1a.x;
-    const dy2 = ln2b.y - ln2a.y;
-    const dx2 = ln2b.x - ln2a.x;
-    const det = dy1 * dx2 - dy2 * dx1;
-
-    let ip: IPoint64;
-
-    if (det === 0.0) {
-      ip = new Point64(0, 0);
-      return { ip, success: false };
-    }
-
-    const t = ((ln1a.x - ln2a.x) * dy2 - (ln1a.y - ln2a.y) * dx2) / det;
-    if (t <= 0.0) ip = ln1a;
-    else if (t >= 1.0) ip = ln2a;
-    else ip = new Point64(ln1a.x + t * dx1, ln1a.y + t * dy1);
-    return { ip, success: true };
-  }
 
   public static segsIntersect(seg1a: IPoint64, seg1b: IPoint64, seg2a: IPoint64, seg2b: IPoint64, inclusive: boolean = false): boolean {
     if (inclusive) {

@@ -1548,7 +1548,7 @@ export class ClipperBase {
   }
 
   private addNewIntersectNode(ae1: Active, ae2: Active, topY: number): void {
-    const result = InternalClipper.getIntersectPt(ae1.bot, ae1.top, ae2.bot, ae2.top)
+    const result = InternalClipper.getIntersectPoint(ae1.bot, ae1.top, ae2.bot, ae2.top)
     let ip: IPoint64 = result.ip
     if (!result.success) {
       ip = new Point64(ae1.curX, topY);
