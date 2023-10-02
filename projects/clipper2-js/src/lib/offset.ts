@@ -442,7 +442,8 @@ export class ClipperOffset {
     const area = Clipper.area(path);
     if ((area < 0) !== (this._groupDelta < 0)) {
       const rect = Clipper.getBounds(path);
-      if (Math.abs(this._groupDelta) * 2 > rect.width) return;
+      const offsetMinDim = Math.abs(this._groupDelta) * 2;
+      if (offsetMinDim > rect.width || offsetMinDim > rect.height) return;
     }
 
     group.outPath = [];
