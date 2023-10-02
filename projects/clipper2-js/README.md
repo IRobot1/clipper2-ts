@@ -1,8 +1,10 @@
 # clipper2-js
+
+![npm](https://img.shields.io/npm/v/clipper2-js)
+
 A native Typescript/Javascript port of Clipper2
 
-![image](https://github.com/IRobot1/clipper2-ts/assets/25032599/d7d372fe-d680-46c3-bc98-01a057e92b2a)
-
+![image](./screenshot.png)
 
 ### Overview
 
