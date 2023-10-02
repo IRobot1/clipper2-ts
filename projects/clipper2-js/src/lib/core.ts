@@ -249,7 +249,8 @@ export class InternalClipper {
     const t = ((ln1a.x - ln2a.x) * dy2 - (ln1a.y - ln2a.y) * dx2) / det;
     if (t <= 0.0) ip = ln1a;
     else if (t >= 1.0) ip = ln1b;
-    else ip = new Point64(ln1a.x + t * dx1, ln1a.y + t * dy1);
+    // NB: truncate the result instead of rounding it, to make the C# version work similarly to the C++ and Delphi versions
+    else ip = new Point64(Math.trunc(ln1a.x + t * dx1), Math.trunc(ln1a.y + t * dy1));
     return { ip, success: true };
   }
 
