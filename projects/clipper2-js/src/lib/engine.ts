@@ -10,7 +10,7 @@
 *******************************************************************************/
 
 import { Clipper } from "./clipper";
-import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathType, Paths64, Point64, Rect64 } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, MidpointRounding, Path64, PathType, Paths64, Point64, Rect64, midPointRound } from "./core";
 
 //
 // Converted from C# implemention https://github.com/AngusJohnson/Clipper2/blob/main/CSharp/Clipper2Lib/Clipper.Engine.cs
@@ -430,7 +430,7 @@ export class ClipperBase {
   private static topX(ae: Active, currentY: number): number {
     if ((currentY === ae.top.y) || (ae.top.x === ae.bot.x)) return ae.top.x;
     if (currentY === ae.bot.y) return ae.bot.x;
-    return ae.bot.x + Math.round(ae.dx * (currentY - ae.bot.y));
+    return ae.bot.x + midPointRound(ae.dx * (currentY - ae.bot.y), MidpointRounding.ToEven);
   }
 
   private static isHorizontal(ae: Active): boolean {

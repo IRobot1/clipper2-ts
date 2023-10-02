@@ -137,7 +137,25 @@ export class Rect64 {
   }
 }
 
+export enum MidpointRounding {
+  ToEven,
+  AwayFromZero
+}
 
+export function midPointRound(value: number, mode: MidpointRounding = MidpointRounding.ToEven): number {
+  const factor = Math.pow(10, 0);
+  value *= factor;
+
+  let rounded: number;
+  if (mode === MidpointRounding.AwayFromZero) {
+    rounded = (value > 0) ? Math.floor(value + 0.5) : Math.ceil(value - 0.5);
+  } else {
+    // For MidpointRounding.ToEven, use the default JavaScript rounding
+    rounded = Math.round(value);
+  }
+
+  return rounded / factor;
+}
 
 
 export class Point64 implements IPoint64 {
@@ -146,21 +164,17 @@ export class Point64 implements IPoint64 {
 
   constructor(xOrPt?: number | Point64, yOrScale?: number) {
     if (typeof xOrPt === 'number' && typeof yOrScale === 'number') {
-      this.x = Math.round(xOrPt);
-      this.y = Math.round(yOrScale);
+      this.x = midPointRound(xOrPt,MidpointRounding.AwayFromZero);
+      this.y = midPointRound(yOrScale, MidpointRounding.AwayFromZero);
     } else  {
       const pt = xOrPt as Point64
       if (yOrScale !== undefined) {
-        this.x = Math.round(pt.x * yOrScale);
-        this.y = Math.round(pt.y * yOrScale);
+        this.x = midPointRound(pt.x * yOrScale, MidpointRounding.AwayFromZero);
+        this.y = midPointRound(pt.y * yOrScale, MidpointRounding.AwayFromZero);
       } else {
         this.x = pt.x;
         this.y = pt.y;
       }
-    //} else {
-    //  const pt = xOrPt as Point64
-    //  this.x = Math.round((<IPoint64>xOrPt).x * (yOrScale || 1));
-    //  this.y = Math.round((<IPoint64>xOrPt).y * (yOrScale || 1));
     }
   }
 
@@ -228,7 +242,7 @@ export class InternalClipper {
 
   static checkCastInt64(val: number): number {
     if ((val >= this.max_coord) || (val <= this.min_coord)) return this.Invalid64;
-    return Math.round(val);
+    return midPointRound(val, MidpointRounding.AwayFromZero);
   }
 
 
@@ -276,7 +290,11 @@ export class InternalClipper {
     const dy = seg2.y - seg1.y;
     let q = ((offPt.x - seg1.x) * dx + (offPt.y - seg1.y) * dy) / ((dx * dx) + (dy * dy));
     if (q < 0) q = 0; else if (q > 1) q = 1;
-    return new Point64(seg1.x + Math.round(q * dx), seg1.y + Math.round(q * dy));
+    // use MidpointRounding.ToEven in order to explicitly match the nearbyint behaviour on the C++ side
+    return new Point64(
+      seg1.x + midPointRound(q * dx, MidpointRounding.ToEven),
+      seg1.y + midPointRound(q * dy, MidpointRounding.ToEven)
+    );
   }
 
   public static pointInPolygon(pt: IPoint64, polygon: Path64): PointInPolygonResult {

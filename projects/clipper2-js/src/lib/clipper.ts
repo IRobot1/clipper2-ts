@@ -18,7 +18,7 @@
 // Converted by ChatGPT 4 August 3 version https://help.openai.com/en/articles/6825453-chatgpt-release-notes
 //
 
-import { ClipType, FillRule, IPoint64, InternalClipper, Path64, PathType, Paths64, Point64, Rect64 } from "./core";
+import { ClipType, FillRule, IPoint64, InternalClipper, MidpointRounding, Path64, PathType, Paths64, Point64, Rect64, midPointRound } from "./core";
 import { Clipper64, PointInPolygonResult, PolyPath64, PolyPathBase, PolyTree64 } from "./engine";
 import { Minkowski } from "./minkowski";
 import { ClipperOffset, EndType, JoinType } from "./offset";
@@ -157,8 +157,8 @@ export class Clipper {
 
   public static scalePoint64(pt: Point64, scale: number): Point64 {
     const result = new Point64(
-      Math.round(pt.x * scale),
-      Math.round(pt.y * scale)
+      midPointRound(pt.x * scale, MidpointRounding.AwayFromZero),
+      midPointRound(pt.y * scale, MidpointRounding.AwayFromZero)
     )
     return result;
   }
