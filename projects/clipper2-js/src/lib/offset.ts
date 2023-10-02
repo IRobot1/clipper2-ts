@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  9 September 2023                                                *
+* Date      :  16 September 2023                                               *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  Path Offset (Inflate/Shrink)                                    *
@@ -317,7 +317,7 @@ export class ClipperOffset {
 
     const absDelta = Math.abs(this._groupDelta);
     // now offset the original vertex delta units along unit vector
-    let ptQ = new PointD(path[j].x, path[j].y); 
+    let ptQ = new PointD(path[j].x, path[j].y);
     ptQ = ClipperOffset.translatePoint(ptQ, absDelta * vec.x, absDelta * vec.y);
 
     // get perpendicular vertices
@@ -414,13 +414,17 @@ export class ClipperOffset {
       return;
     }
 
-    if (cosA > 0.999) {
-      this.doMiter(group, path, j, k, cosA);
-    } else if (cosA > -0.99 && (sinA * this._groupDelta < 0)) {
+    if (cosA > -0.99 && (sinA * this._groupDelta < 0)) { // test for concavity first (#593)
+      // is concave
       group.outPath.push(this.getPerpendic(path[j], this._normals[k]));
+      // this extra point is the only (simple) way to ensure that
+      // path reversals are fully cleaned with the trailing clipper
       group.outPath.push(path[j]);
       group.outPath.push(this.getPerpendic(path[j], this._normals[j]));
+    } else if (cosA > 0.999) {
+      this.doMiter(group, path, j, k, cosA);
     } else if (this._joinType === JoinType.Miter) {
+      // miter unless the angle is so acute the miter would exceeds ML
       if (cosA > this._mitLimSqr - 1) {
         this.doMiter(group, path, j, k, cosA);
       } else {
