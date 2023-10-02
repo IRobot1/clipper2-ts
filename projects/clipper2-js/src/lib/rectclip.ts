@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  6 August 2023                                                   *
+* Date      :  8 September 2023                                                  *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  FAST rectangular clipping                                       *
@@ -53,7 +53,7 @@ export class RectClip64 {
     this.edges = Array(8).fill(undefined).map(() => []);
   }
 
-  protected add(pt: IPoint64, startingNewPath: boolean = false): OutPt2  {
+  protected add(pt: IPoint64, startingNewPath: boolean = false): OutPt2 {
     let currIdx = this.results.length;
     let result: OutPt2;
     if (currIdx === 0 || startingNewPath) {
@@ -224,87 +224,134 @@ export class RectClip64 {
     return { success: true, loc };
   }
 
+  private static isHorizontal(pt1: IPoint64, pt2: IPoint64): boolean {
+    return pt1.y == pt2.y;
+  }
+
+  private static getSegmentIntersection(p1: IPoint64, p2: IPoint64, p3: IPoint64, p4: IPoint64): { success: boolean, ip: IPoint64 } {
+    let res1 = InternalClipper.crossProduct(p1, p3, p4);
+    let res2 = InternalClipper.crossProduct(p2, p3, p4);
+    let ip: IPoint64 = new Point64(0, 0);
+
+    const equals = (lhs: IPoint64, rhs: IPoint64): boolean => {
+      return lhs.x === rhs.x && lhs.y === rhs.y;
+    }
+
+    if (res1 === 0) {
+      ip = p1;
+      if (res2 === 0) return { ip, success: false };
+      else if (equals(p1, p3) || equals(p1, p4)) return { ip, success: true };
+      else if (RectClip64.isHorizontal(p3, p4)) return { ip, success: ((p1.x > p3.x) === (p1.x < p4.x)) };
+      else return { ip, success: ((p1.y > p3.y) === (p1.y < p4.y)) };
+    }
+    else if (res2 === 0) {
+      ip = p2;
+      if (equals(p2, p3) || equals(p2, p4)) return { ip, success: true };
+      else if (RectClip64.isHorizontal(p3, p4)) return { ip, success: ((p2.x > p3.x) === (p2.x < p4.x)) };
+      else return { ip, success: ((p2.y > p3.y) === (p2.y < p4.y)) };
+    }
+
+    if ((res1 > 0) === (res2 > 0)) return { ip: new Point64(0, 0), success: false };
+
+    let res3 = InternalClipper.crossProduct(p3, p1, p2);
+    let res4 = InternalClipper.crossProduct(p4, p1, p2);
+
+    if (res3 === 0) {
+      ip = p3;
+      if (equals(p3, p1) || equals(p3, p2)) return { ip, success: true };
+      else if (RectClip64.isHorizontal(p1, p2)) return { ip, success: ((p3.x > p1.x) === (p3.x < p2.x)) };
+      else return { ip, success: ((p3.y > p1.y) === (p3.y < p2.y)) };
+    }
+    else if (res4 === 0) {
+      ip = p4;
+      if (equals(p4, p1) || equals(p4, p2)) return { ip, success: true };
+      else if (RectClip64.isHorizontal(p1, p2)) return { ip, success: ((p4.x > p1.x) === (p4.x < p2.x)) };
+      else return { ip, success: ((p4.y > p1.y) === (p4.y < p2.y)) };
+    }
+
+    if ((res3 > 0) === (res4 > 0)) return { ip: new Point64(0, 0), success: false };
+
+    return InternalClipper.getIntersectPoint(p1, p2, p3, p4);
+  }
+
   protected static getIntersection(rectPath: Path64, p: IPoint64, p2: IPoint64, loc: Location): { success: boolean, loc: Location, ip: IPoint64 } {
     // gets the pt of intersection between rectPath and segment(p, p2) that's closest to 'p'
     // when result == false, loc will remain unchanged
     let ip: IPoint64 = new Point64();
+    let result: { success: boolean, ip: IPoint64 }
+
     switch (loc) {
       case Location.left:
-        if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
-        } else if (p.y < rectPath[0].y && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
+        if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[3])).success)
+          return { success: true, loc, ip: result.ip }
+        else if (p.y < rectPath[0].y && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[1])).success) {
           loc = Location.top;
-        } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
+          return { success: true, loc, ip: result.ip }
+        }
+        else if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[2], rectPath[3])).success) {
           loc = Location.bottom;
+          return { success: true, loc, ip: result.ip }
         }
-        else {
-          return { success: false, loc, ip }
-        }
-        break;
+        else return { success: false, loc, ip }
 
       case Location.right:
-        if (InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
-        } else if (p.y < rectPath[0].y && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
+        if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[1], rectPath[2])).success)
+          return { success: true, loc, ip: result.ip }
+        else if (p.y < rectPath[0].y && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[1])).success) {
           loc = Location.top;
-        } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
+          return { success: true, loc, ip: result.ip }
+        }
+        else if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[2], rectPath[3])).success) {
           loc = Location.bottom;
-        } else {
-          return { success: false, loc, ip }
+          return { success: true, loc, ip: result.ip }
         }
-        break;
+        else return { success: false, loc, ip }
+
       case Location.top:
-        if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
-        } else if (p.x < rectPath[0].x && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
+        if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[1])).success)
+          return { success: true, loc, ip: result.ip }
+        else if (p.x < rectPath[0].x && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[3])).success) {
           loc = Location.left;
-        } else if (p.x > rectPath[1].x && InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
-          loc = Location.right;
-        } else {
-          return { success: false, loc, ip }
+          return { success: true, loc, ip: result.ip }
         }
-        break;
+        else if (p.x > rectPath[1].x && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[1], rectPath[2])).success) {
+          loc = Location.right;
+          return { success: true, loc, ip: result.ip }
+        }
+        else return { success: false, loc, ip }
 
       case Location.bottom:
-        if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
-        } else if (p.x < rectPath[3].x && InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
+        if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[2], rectPath[3])).success)
+          return { success: true, loc, ip: result.ip }
+        else if (p.x < rectPath[3].x && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[3])).success) {
           loc = Location.left;
-        } else if (p.x > rectPath[2].x && InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
-          loc = Location.right;
-        } else {
-          return { success: false, loc, ip }
+          return { success: true, loc, ip: result.ip }
         }
-        break;
+        else if (p.x > rectPath[2].x && (result = RectClip64.getSegmentIntersection(p, p2, rectPath[1], rectPath[2])).success) {
+          loc = Location.right;
+          return { success: true, loc, ip: result.ip }
+        }
+        else return { success: false, loc, ip }
 
-      case Location.inside:
-        if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[3]).ip;
+      default:
+        if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[3])).success) {
           loc = Location.left;
-        } else if (InternalClipper.segsIntersect(p, p2, rectPath[0], rectPath[1], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[0], rectPath[1]).ip;
+          return { success: true, loc, ip: result.ip }
+        }
+        else if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[0], rectPath[1])).success) {
           loc = Location.top;
-        } else if (InternalClipper.segsIntersect(p, p2, rectPath[1], rectPath[2], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[1], rectPath[2]).ip;
-          loc = Location.right;
-        } else if (InternalClipper.segsIntersect(p, p2, rectPath[2], rectPath[3], true)) {
-          ip = InternalClipper.getIntersectPt(p, p2, rectPath[2], rectPath[3]).ip;
-          loc = Location.bottom;
-        } else {
-          return { success: false, loc, ip }
+          return { success: true, loc, ip: result.ip }
         }
-        break;
-
+        else if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[1], rectPath[2])).success) {
+          loc = Location.right;
+          return { success: true, loc, ip: result.ip }
+        }
+        else if ((result = RectClip64.getSegmentIntersection(p, p2, rectPath[2], rectPath[3])).success) {
+          loc = Location.bottom;
+          return { success: true, loc, ip: result.ip }
+        }
+        else return { success: false, loc, ip }
     }
-    return { success:true, loc, ip };
   }
 
   protected getNextLocation(path: Path64, context: { loc: Location, i: number, highI: number }): void {
@@ -353,7 +400,7 @@ export class RectClip64 {
           else if (path[context.i].y > this.rect.bottom) context.loc = Location.bottom;
           else if (path[context.i].y < this.rect.top) context.loc = Location.top;
           else {
-            this.add(path[context.i]);  
+            this.add(path[context.i]);
             context.i++;
             continue;
           }
@@ -407,7 +454,7 @@ export class RectClip64 {
 
       if (!result.success) {
         if (prevCrossLoc == Location.inside) {
-          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp); 
+          const isClockw = RectClip64.isClockwise(prev, loc, prevPt, path[i], this.mp);
           do {
             startLocs.push(prev);
             prev = RectClip64.getAdjacentLocation(prev, isClockw);
@@ -494,8 +541,8 @@ export class RectClip64 {
     }
   }
 
-  public execute(paths: Paths64): Paths64 { 
-    const result: Paths64 = []; 
+  public execute(paths: Paths64): Paths64 {
+    const result: Paths64 = [];
     if (this.rect.isEmpty()) return result;
 
     for (const path of paths) {
@@ -513,7 +560,7 @@ export class RectClip64 {
         this.tidyEdgePair(i, this.edges[i * 2], this.edges[i * 2 + 1]);
 
       for (const op of this.results) {
-        const tmp = this.getPath(op); 
+        const tmp = this.getPath(op);
         if (tmp.length > 0) result.push(tmp);
       }
 
@@ -532,7 +579,7 @@ export class RectClip64 {
       if (op === undefined) continue;
 
       do {
-        if (InternalClipper.crossProduct(op2!.prev!.pt, op2!.pt, op2!.next!.pt) === 0) { 
+        if (InternalClipper.crossProduct(op2!.prev!.pt, op2!.pt, op2!.next!.pt) === 0) {
           if (op2 === op) {
             op2 = RectClip64.unlinkOpBack(op2);
             if (op2 === undefined) break;
@@ -743,11 +790,11 @@ export class RectClipLines64 extends RectClip64 {
 
   public override execute(paths: Paths64): Paths64 {
     const result = new Paths64();
-    if (this.rect.isEmpty()) return result; 
+    if (this.rect.isEmpty()) return result;
     for (const path of paths) {
       if (path.length < 2) continue;
       this.pathBounds = Clipper.getBounds(path);
-      if (!this.rect.intersects(this.pathBounds)) continue; 
+      if (!this.rect.intersects(this.pathBounds)) continue;
 
       this.executeInternal(path);
 
@@ -780,7 +827,7 @@ export class RectClipLines64 extends RectClip64 {
 
   protected override  executeInternal(path: Path64): void {
     this.results = [];
-    if (path.length < 2 || this.rect.isEmpty()) return; 
+    if (path.length < 2 || this.rect.isEmpty()) return;
 
     let prev: Location = Location.inside;
     let i = 1;
