@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  27 August 2023                                                  *
+* Date      :  3 September 2023                                                  *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  This is the main polygon clipping module                        *
@@ -2317,7 +2317,7 @@ export class ClipperBase {
             or2.pts = tmp;
             ClipperBase.fixOutRecPts(or1);
             ClipperBase.fixOutRecPts(or2);
-            or2.owner = or1.owner;
+            or2.owner = or1;
           } else if (ClipperBase.path1InsidePath2(or2.pts, or1.pts!)) {
             or2.owner = or1;
           } else {
@@ -2743,6 +2743,32 @@ export abstract class PolyPathBase {
   }
 
   forEach = this.children.forEach
+
+  private toStringInternal(idx: number, level: number): string {
+    let result = "", padding = "", plural = "s";
+    if (this.children.length === 1) plural = "";
+    padding = padding.padStart(level * 2);
+    if ((level & 1) === 0)
+      result += `${padding}+- hole (${idx}) contains ${this.children.length} nested polygon${plural}.\n`;
+    else
+      result += `${padding}+- polygon (${idx}) contains ${this.children.length} hole${plural}.\n`;
+
+    for (let i = 0; i < this.children.length; i++)
+      if (this.children[i].children.length > 0)
+        result += this.children[i].toStringInternal(i, level + 1);
+    return result;
+  }
+
+  toString(): string {
+    if (this.level > 0) return ""; //only accept tree root 
+    let plural = "s";
+    if (this.children.length === 1) plural = "";
+    let result = `Polytree with ${this.children.length} polygon${plural}.\n`;
+    for (let i = 0; i < this.children.length; i++)
+      if (this.children[i].children.length > 0)
+        result += this.children[i].toStringInternal(i, 1);
+    return result + '\n';
+  }
 
 } // end of PolyPathBase class
 
