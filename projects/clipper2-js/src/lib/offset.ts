@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Author    :  Angus Johnson                                                   *
-* Date      :  7 August 2023                                                   *
+* Date      :  9 September 2023                                                *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2023                                         *
 * Purpose   :  Path Offset (Inflate/Shrink)                                    *
@@ -582,7 +582,8 @@ export class ClipperOffset {
 
         if (group.endType == EndType.Round) {
           const r = absDelta;
-          group.outPath = Clipper.ellipse(path[0], r, r);
+          const steps = Math.ceil(this._stepsPerRad * 2 * Math.PI);
+          group.outPath = Clipper.ellipse(path[0], r, r, steps);
         } else {
           const d = Math.ceil(this._groupDelta);
           const r = new Rect64(path[0].x - d, path[0].y - d, path[0].x - d, path[0].y - d);
