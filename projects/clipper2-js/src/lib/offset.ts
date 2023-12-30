@@ -400,9 +400,9 @@ export class ClipperOffset {
     this._normals.length = cnt;
 
     for (let i = 0; i < cnt - 1; i++) {
-      this._normals.push(ClipperOffset.getUnitNormal(path[i], path[i + 1]));
+      this._normals[i] = ClipperOffset.getUnitNormal(path[i], path[i + 1]);
     }
-    this._normals.push(ClipperOffset.getUnitNormal(path[cnt - 1], path[0]));
+    this._normals[cnt - 1] = ClipperOffset.getUnitNormal(path[cnt - 1], path[0]);
   }
 
   crossProduct(vec1: PointD, vec2: PointD): number {
