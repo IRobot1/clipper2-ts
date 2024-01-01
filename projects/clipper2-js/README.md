@@ -4,7 +4,7 @@
 
 A native Typescript/Javascript port of Clipper2
 
-![image](./screenshot.png)
+![image](https://github.com/IRobot1/clipper2-ts/blob/master/projects/clipper2-js/screenshot.png)
 
 ### Overview
 
